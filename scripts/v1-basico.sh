@@ -4,11 +4,11 @@
 # Demonstra o uso apenas do system prompt (tudo em um lugar)
 
 # Configurar profile AWS
-export AWS_PROFILE=seattle
+#export AWS_PROFILE=seattle
 
 # Usar inference profile (cross-region) - prefixo "us."
-MODEL_ID="us.anthropic.claude-sonnet-4-5-20250929-v1:0"
-REGION="us-east-1"
+MODEL_ID="global.anthropic.claude-sonnet-4-6"
+REGION="us-east-2"
 
 # System prompt: comportamento + contexto (tudo junto na V1)
 COMPORTAMENTO="COMPORTE-SE COM UM ATENDENTE QUE VENDE INGRESSO. \nVocê vai vender ingressos para o meu treinamento de AWS com IA.\nLimite-se a falar sobre o ingressso normal e vip.\nIngresso normal custa 47 e VIP custa 97.\nNormal: Evento ao vivo + 2 dias de gravação.\nVIP: Tudo do normal + aula extra + 7 dias de gravação."

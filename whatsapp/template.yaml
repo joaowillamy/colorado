@@ -1,0 +1,120 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Atendente de WhatsApp com Amazon Bedrock (SNS -> SQS -> Lambda)
+
+Parameters:
+  KbId:
+    Type: String
+    Description: ID do Knowledge Base
+  GuardrailId:
+    Type: String
+    Default: "off"
+  GuardrailVersion:
+    Type: String
+    Default: DRAFT
+  ModelId:
+    Type: String
+    Default: us.anthropic.claude-sonnet-4-6
+
+Resources:
+  # Tabela única: CONVERSA#, MSG#, ALUNO#
+  Tabela:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - { AttributeName: pk, AttributeType: S }
+      KeySchema:
+        - { AttributeName: pk, KeyType: HASH }
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+
+  # O End User Messaging Social publica aqui (tópico padrão; FIFO não é suportado).
+  # Ao ligar "Message and event publishing" no console, escolha este tópico.
+  Topico:
+    Type: AWS::SNS::Topic
+
+  Dlq:
+    Type: AWS::SQS::Queue
+    Properties:
+      MessageRetentionPeriod: 1209600
+
+  Fila:
+    Type: AWS::SQS::Queue
+    Properties:
+      # >= 6x o timeout da Lambda (recomendação da AWS)
+      VisibilityTimeout: 180
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt Dlq.Arn
+        maxReceiveCount: 5
+
+  FilaPolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues: [!Ref Fila]
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal: { Service: sns.amazonaws.com }
+            Action: sqs:SendMessage
+            Resource: !GetAtt Fila.Arn
+            Condition:
+              ArnEquals: { "aws:SourceArn": !Ref Topico }
+
+  Assinatura:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref Topico
+      Protocol: sqs
+      Endpoint: !GetAtt Fila.Arn
+
+  Funcao:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handler.handler
+      Runtime: nodejs22.x
+      Architectures: [arm64]
+      Timeout: 30
+      MemorySize: 512
+      # Limita chamadas simultâneas ao Bedrock (cota de requisições por minuto)
+      ReservedConcurrentExecutions: 10
+      Environment:
+        Variables:
+          TABELA: !Ref Tabela
+          KB_ID: !Ref KbId
+          MODEL_ID: !Ref ModelId
+          GUARDRAIL_ID: !Ref GuardrailId
+          GUARDRAIL_VERSION: !Ref GuardrailVersion
+          LOCK_SEG: "60"
+      Policies:
+        - DynamoDBCrudPolicy: { TableName: !Ref Tabela }
+        - Statement:
+            - Effect: Allow
+              Action: [bedrock:InvokeModel]
+              Resource:
+                - !Sub arn:aws:bedrock:*:${AWS::AccountId}:inference-profile/*
+                - arn:aws:bedrock:*::foundation-model/*
+            - Effect: Allow
+              Action: [bedrock:Retrieve]
+              Resource: !Sub arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:knowledge-base/${KbId}
+            - Effect: Allow
+              Action: [bedrock:ApplyGuardrail]
+              Resource: !Sub arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:guardrail/*
+            - Effect: Allow
+              Action: [social-messaging:SendWhatsAppMessage]
+              Resource: "*"
+      Events:
+        Sqs:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt Fila.Arn
+            BatchSize: 5
+            FunctionResponseTypes: [ReportBatchItemFailures]
+
+Outputs:
+  TopicoArn:
+    Value: !Ref Topico
+  DlqUrl:
+    Value: !Ref Dlq

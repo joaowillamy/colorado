@@ -1,0 +1,8 @@
+{
+  "Records": [
+    {
+      "messageId": "sqs-0001",
+      "body": "{\"Type\":\"Notification\",\"MessageId\":\"sns-0001\",\"Message\":\"{\\\"context\\\":{\\\"MetaWabaIds\\\":[{\\\"wabaId\\\":\\\"1234567890abcde\\\",\\\"arn\\\":\\\"arn:aws:social-messaging:us-east-1:123456789012:waba/fb2594b8a7974770b128a409e2example\\\"}],\\\"MetaPhoneNumberIds\\\":[{\\\"metaPhoneNumberId\\\":\\\"321010217712345\\\",\\\"arn\\\":\\\"arn:aws:social-messaging:us-east-1:123456789012:phone-number-id/976c72a700aac43eaf573ae050example\\\"}]},\\\"whatsAppWebhookEntry\\\":\\\"{\\\\\\\"id\\\\\\\":\\\\\\\"365731266123456\\\\\\\",\\\\\\\"changes\\\\\\\":[{\\\\\\\"value\\\\\\\":{\\\\\\\"messaging_product\\\\\\\":\\\\\\\"whatsapp\\\\\\\",\\\\\\\"metadata\\\\\\\":{\\\\\\\"display_phone_number\\\\\\\":\\\\\\\"12065550100\\\\\\\",\\\\\\\"phone_number_id\\\\\\\":\\\\\\\"321010217712345\\\\\\\"},\\\\\\\"contacts\\\\\\\":[{\\\\\\\"profile\\\\\\\":{\\\\\\\"name\\\\\\\":\\\\\\\"Diego\\\\\\\"},\\\\\\\"wa_id\\\\\\\":\\\\\\\"14255550150\\\\\\\"}],\\\\\\\"messages\\\\\\\":[{\\\\\\\"from\\\\\\\":\\\\\\\"14255550150\\\\\\\",\\\\\\\"id\\\\\\\":\\\\\\\"wamid.EXEMPLO1\\\\\\\",\\\\\\\"timestamp\\\\\\\":\\\\\\\"1723506035\\\\\\\",\\\\\\\"text\\\\\\\":{\\\\\\\"body\\\\\\\":\\\\\\\"Quanto custa o ingresso VIP?\\\\\\\"},\\\\\\\"type\\\\\\\":\\\\\\\"text\\\\\\\"}]},\\\\\\\"field\\\\\\\":\\\\\\\"messages\\\\\\\"}]}\\\",\\\"aws_account_id\\\":\\\"123456789012\\\",\\\"message_timestamp\\\":\\\"2025-01-08T23:30:43.271279391Z\\\"}\"}"
+    }
+  ]
+}

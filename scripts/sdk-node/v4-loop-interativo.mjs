@@ -7,11 +7,10 @@ import { readFileSync } from "fs";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 
-const MODEL_ID = "us.anthropic.claude-sonnet-4-5-20250929-v1:0";
+const MODEL_ID = "global.anthropic.claude-sonnet-4-6";
 
 const client = new BedrockRuntimeClient({
-  region: "us-east-1",
-  profile: "seattle",
+  region: "us-east-2",
 });
 
 // Ler system prompt do arquivo externo (mesmo do shell)
