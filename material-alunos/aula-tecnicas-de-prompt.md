@@ -187,7 +187,7 @@ Se perguntarem sobre qualquer produto que não consta aqui, responda:
 Dar uma identidade ao modelo no system prompt.
 
 ```
-Você é a Bia, atendente comercial da equipe do Henrylle Maia.
+Você é a Bia, atendente comercial da equipe do Joao Willamy.
 Tom: informal, amigável, direto.
 ```
 

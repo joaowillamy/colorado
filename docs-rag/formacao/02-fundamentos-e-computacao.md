@@ -1,4 +1,4 @@
-# Formação AWS 5.0 — Fundamentos e computação
+# Formação do Joao Willamy 5.0 — Fundamentos e computação
 
 ## Introdução + Criação da conta
 

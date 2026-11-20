@@ -1,6 +1,6 @@
-# Formato e acesso à sala da Imersão AWS & IA
+# Formato e acesso à sala da Imersão Joao Willamy
 
-Este documento explica como a Imersão AWS & IA é realizada e como o aluno entra
+Este documento explica como a Imersão Joao Willamy é realizada e como o aluno entra
 na sala no dia do evento.
 
 A Imersão é **100% online**, realizada pelo Zoom. Não existe edição presencial.

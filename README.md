@@ -1,6 +1,6 @@
 # Curso: Amazon Bedrock
 
-Material do curso de **Amazon Bedrock** do **Henrylle Maia**.
+Material do curso de **Amazon Bedrock** do **Joao Willamy**.
 
 Aqui ficam os projetos de exemplo construídos ao longo das aulas — do primeiro
 `converse` via CLI até o assistente com RAG, tools e guardrails.

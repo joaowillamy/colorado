@@ -1,6 +1,6 @@
-# Segurança na Formação AWS: IAM, WAF, ACM e Secrets Manager
+# Segurança na Formação do Joao Willamy: IAM, WAF, ACM e Secrets Manager
 
-Este documento cobre o que a Formação AWS ensina sobre segurança na AWS, incluindo
+Este documento cobre o que a Formação do Joao Willamy ensina sobre segurança na AWS, incluindo
 atacar e depois proteger uma aplicação real.
 
 ## WAF

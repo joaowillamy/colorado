@@ -1,6 +1,6 @@
 # Conteúdo programático do Dia 2 da Imersão — 22/03
 
-Este documento lista o que é ensinado no segundo dia da Imersão AWS & IA.
+Este documento lista o que é ensinado no segundo dia da Imersão Joao Willamy.
 
 O Dia 2 acontece em 22/03, domingo, das 09h30 às 17h30, e cobre dados,
 observabilidade, infraestrutura como código e IA generativa.

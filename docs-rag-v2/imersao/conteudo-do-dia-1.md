@@ -1,6 +1,6 @@
 # Conteúdo programático do Dia 1 da Imersão — 21/03
 
-Este documento lista o que é ensinado no primeiro dia da Imersão AWS & IA.
+Este documento lista o que é ensinado no primeiro dia da Imersão Joao Willamy.
 
 O Dia 1 acontece em 21/03, sábado, das 09h30 às 17h30, e cobre a base do projeto:
 containerização e deploy na AWS.

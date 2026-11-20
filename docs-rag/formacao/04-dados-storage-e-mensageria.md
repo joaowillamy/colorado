@@ -1,4 +1,4 @@
-# Formação AWS 5.0 — Dados, storage e mensageria
+# Formação do Joao Willamy 5.0 — Dados, storage e mensageria
 
 ## RDS
 

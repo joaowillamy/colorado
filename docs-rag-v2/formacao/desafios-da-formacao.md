@@ -1,6 +1,6 @@
-# Desafios da Formação AWS 5.0
+# Desafios da Formação do Joao Willamy 5.0
 
-Este documento cobre os Desafios da Formação AWS — o acompanhamento estruturado que
+Este documento cobre os Desafios da Formação do Joao Willamy — o acompanhamento estruturado que
 o aluno faz ao longo da jornada. São dois tipos, em etapas diferentes.
 
 ## Desafios Fundamentais + Preparatórios
@@ -19,5 +19,5 @@ o aluno faz ao longo da jornada. São dois tipos, em etapas diferentes.
 - Nível recomendado para os mais avançados: 2 e 3
 - **Carga horária recomendada**: 10h a 15h por semana
 
-Os 36 desafios do Desafio de Laboratórios 2.0 pertencem à Formação AWS e não têm
+Os 36 desafios do Desafio de Laboratórios 2.0 pertencem à Formação do Joao Willamy e não têm
 relação com o desafio extra do ingresso VIP da Imersão, que é outro produto.

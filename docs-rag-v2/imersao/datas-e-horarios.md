@@ -1,6 +1,6 @@
-# Datas e horários da Imersão AWS & IA
+# Datas e horários da Imersão Joao Willamy
 
-Este documento cobre quando a Imersão AWS & IA acontece: dias, horários e pausas.
+Este documento cobre quando a Imersão Joao Willamy acontece: dias, horários e pausas.
 
 A Imersão acontece em dois dias: **21/03, sábado**, e **22/03, domingo**.
 

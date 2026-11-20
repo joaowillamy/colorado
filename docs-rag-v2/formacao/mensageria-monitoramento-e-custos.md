@@ -1,7 +1,7 @@
-# Mensageria, monitoramento e custos na Formação AWS: SQS, SNS e CloudWatch
+# Mensageria, monitoramento e custos na Formação do Joao Willamy: SQS, SNS e CloudWatch
 
 Este documento cobre filas, notificações, monitoramento e controle de custo na
-Formação AWS.
+Formação do Joao Willamy.
 
 ## SQS (praticamente um curso)
 

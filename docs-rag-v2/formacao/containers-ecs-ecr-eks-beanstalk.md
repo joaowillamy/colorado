@@ -1,6 +1,6 @@
-# Containers na Formação AWS: ECS, ECR, EKS e Elastic Beanstalk
+# Containers na Formação do Joao Willamy: ECS, ECR, EKS e Elastic Beanstalk
 
-Este documento cobre o que a Formação AWS ensina sobre containers na AWS, do
+Este documento cobre o que a Formação do Joao Willamy ensina sobre containers na AWS, do
 registro da imagem até a orquestração em produção.
 
 ## ECS

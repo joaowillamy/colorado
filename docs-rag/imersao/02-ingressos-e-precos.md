@@ -1,4 +1,4 @@
-# Imersão AWS & IA — Ingressos e preços
+# Imersão Joao Willamy — Ingressos e preços
 
 ## Ingresso Normal
 

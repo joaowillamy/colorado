@@ -1,4 +1,4 @@
-# Imersão AWS & IA — Datas, horário e formato
+# Imersão Joao Willamy — Datas, horário e formato
 
 O evento acontece nos dias 21/03 (sábado) e 22/03 (domingo), das 09h30 às 17h30.
 

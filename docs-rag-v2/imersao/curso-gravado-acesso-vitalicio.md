@@ -15,7 +15,7 @@ que expira.
 
 O que inclui:
 
-- Cashback integral do valor investido na Formação AWS
+- Cashback integral do valor investido na Formação do Joao Willamy
 - Acesso vitalício ao conteúdo
 - Conteúdo em alta definição, estruturado em formato de curso
 - 3 desafios completos para prática real

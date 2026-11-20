@@ -1,6 +1,6 @@
 # Aula extra do VIP na Imersão: CDN e Proteção de Load Balancer
 
-Este documento cobre a aula extra da Imersão AWS & IA, exclusiva de quem tem
+Este documento cobre a aula extra da Imersão Joao Willamy, exclusiva de quem tem
 ingresso VIP.
 
 A aula extra acontece na **terça-feira às 20h**, com duração aproximada de 2 horas.

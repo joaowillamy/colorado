@@ -26,7 +26,6 @@ em até 15 dias após o fim do evento, no mesmo e-mail da compra.
 
 ## Suporte
 
-Dúvidas sobre pagamento, acesso ou nota fiscal são tratadas pelo time do Henrylle
-Maia, sempre a partir do e-mail usado na compra.
+Dúvidas sobre pagamento, acesso ou nota fiscal são tratadas pelo time do Joao Willamy, sempre a partir do e-mail usado na compra.
 
 O atendimento do agente funciona 24 horas por dia.

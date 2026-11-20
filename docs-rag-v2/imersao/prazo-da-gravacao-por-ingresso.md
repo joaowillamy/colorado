@@ -1,7 +1,7 @@
 # Prazo da gravação incluída no ingresso da Imersão
 
 Este documento explica por quanto tempo a gravação das aulas fica disponível, que é
-diferente para cada tipo de ingresso da Imersão AWS & IA.
+diferente para cada tipo de ingresso da Imersão Joao Willamy.
 
 A gravação está incluída nos dois ingressos, mas o prazo de acesso muda:
 

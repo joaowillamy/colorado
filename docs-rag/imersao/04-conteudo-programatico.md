@@ -1,4 +1,4 @@
-# Imersão AWS & IA — Conteúdo programático
+# Imersão Joao Willamy — Conteúdo programático
 
 ## Dia 1 — 21/03, 09h30 às 17h30
 

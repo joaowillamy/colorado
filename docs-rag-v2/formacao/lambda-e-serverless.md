@@ -1,6 +1,6 @@
-# Serverless na Formação AWS: Lambda, SAM e Lambda Edge
+# Serverless na Formação do Joao Willamy: Lambda, SAM e Lambda Edge
 
-Este documento cobre o que a Formação AWS ensina sobre computação serverless, sem
+Este documento cobre o que a Formação do Joao Willamy ensina sobre computação serverless, sem
 servidor para gerenciar.
 
 ## Lambda

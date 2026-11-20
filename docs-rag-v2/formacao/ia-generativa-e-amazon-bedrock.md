@@ -1,7 +1,7 @@
-# IA generativa e Amazon Bedrock na Formação AWS
+# IA generativa e Amazon Bedrock na Formação do Joao Willamy
 
 Este documento cobre o curso de Amazon Bedrock e os módulos de IA aplicada da
-Formação AWS.
+Formação do Joao Willamy.
 
 ## AWS & IA
 

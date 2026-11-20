@@ -1,4 +1,4 @@
-# Formação AWS 5.0 — Rede, CDN e segurança
+# Formação do Joao Willamy 5.0 — Rede, CDN e segurança
 
 ## VPC
 

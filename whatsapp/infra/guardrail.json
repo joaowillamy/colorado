@@ -1,6 +1,6 @@
 {
   "name": "whatsapp-atendente",
-  "description": "Guardrail do atendente de WhatsApp (Imersao AWS)",
+  "description": "Guardrail do atendente de WhatsApp (Imersao Joao Willamy)",
   "blockedInputMessaging": "Nao posso ajudar com isso por aqui. Quer falar sobre os ingressos da Imersao?",
   "blockedOutputsMessaging": "Nao consegui responder isso. Vou pedir para alguem do time falar com voce.",
   "contentPolicyConfig": {

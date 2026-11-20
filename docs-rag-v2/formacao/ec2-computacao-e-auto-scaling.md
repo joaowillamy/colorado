@@ -1,6 +1,6 @@
-# Computação na Formação AWS: EC2, Launch Template e Auto Scaling
+# Computação na Formação do Joao Willamy: EC2, Launch Template e Auto Scaling
 
-Este documento lista o que a Formação AWS ensina sobre computação em máquinas
+Este documento lista o que a Formação do Joao Willamy ensina sobre computação em máquinas
 virtuais na AWS, do primeiro acesso à conta até escalar automaticamente.
 
 ## Introdução e criação da conta

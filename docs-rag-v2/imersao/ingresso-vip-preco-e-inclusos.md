@@ -1,6 +1,6 @@
-# Ingresso VIP da Imersão AWS & IA: preço e o que inclui
+# Ingresso VIP da Imersão Joao Willamy: preço e o que inclui
 
-Este documento cobre o ingresso VIP da Imersão AWS & IA e o que ele adiciona em
+Este documento cobre o ingresso VIP da Imersão Joao Willamy e o que ele adiciona em
 relação ao ingresso Normal.
 
 **Valor promocional: R$ 97.** O próximo lote será R$ 117.

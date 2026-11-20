@@ -1,6 +1,6 @@
-# Certificado de participação da Imersão AWS & IA
+# Certificado de participação da Imersão Joao Willamy
 
-Este documento cobre o certificado da Imersão AWS & IA: quem tem direito, qual o
+Este documento cobre o certificado da Imersão Joao Willamy: quem tem direito, qual o
 prazo de emissão e como ele é entregue.
 
 ## Quem tem direito

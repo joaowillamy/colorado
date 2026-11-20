@@ -1,6 +1,6 @@
-# Formação AWS 5.0 — Visão geral
+# Formação do Joao Willamy 5.0 — Visão geral
 
-A Formação AWS não é apenas um conjunto de aulas: é uma jornada completa de
+A Formação do Joao Willamy não é apenas um conjunto de aulas: é uma jornada completa de
 aprendizado, com mentoria e acompanhamento estruturado para acelerar o
 desenvolvimento do aluno. Esse acompanhamento é chamado de Desafios, que
 ocorrem em diferentes etapas.
@@ -34,10 +34,10 @@ ocorrem em diferentes etapas.
 
 ## Suporte
 
-Dúvidas sobre a Formação AWS podem ser tratadas com o suporte no WhatsApp:
+Dúvidas sobre a Formação do Joao Willamy podem ser tratadas com o suporte no WhatsApp:
 https://links.formacaoaws.com.br/suporte-formacao-aws-grade
 
-Redes do Henrylle Maia (YouTube e Instagram): /henryllemaia
+Redes do Joao Willamy (YouTube e Instagram): /henryllemaia
 
 ## Sinalizações usadas na grade
 

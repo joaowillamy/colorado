@@ -1,4 +1,4 @@
-# Nota fiscal da Imersão AWS & IA
+# Nota fiscal da Imersão Joao Willamy
 
 Este documento cobre a emissão e o envio da nota fiscal do ingresso da Imersão
 AWS & IA.

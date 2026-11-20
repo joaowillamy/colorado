@@ -295,7 +295,7 @@ EOF
 
 export KB_ID=$(aws bedrock-agent create-knowledge-base \
   --name ${PROJ}-kb \
-  --description "Documentos da Imersao e da Formacao AWS" \
+  --description "Documentos da Imersao e da Formacao do Joao Willamy" \
   --role-arn $KB_ROLE_ARN \
   --knowledge-base-configuration file:///tmp/kb-config.json \
   --query 'knowledgeBase.knowledgeBaseId' --output text)                   # ➜ guardar (vai para KbId)

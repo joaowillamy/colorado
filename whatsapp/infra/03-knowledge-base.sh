@@ -44,7 +44,7 @@ if [ -z "${KB_ID:-}" ]; then
   log "Criando Knowledge Base gerenciado"
   echo '{"type":"MANAGED","managedKnowledgeBaseConfiguration":{"embeddingModelType":"MANAGED"}}' > "$TMP/kb.json"
   KB_ID=$(aws bedrock-agent create-knowledge-base \
-    --name "${PROJ}-kb" --description "Documentos da Imersao e da Formacao AWS" \
+    --name "${PROJ}-kb" --description "Documentos da Imersao e da Formacao do Joao Willamy" \
     --role-arn "$KB_ROLE_ARN" --knowledge-base-configuration "file://$TMP/kb.json" \
     --query 'knowledgeBase.knowledgeBaseId' --output text)
   salvar KB_ID "$KB_ID"

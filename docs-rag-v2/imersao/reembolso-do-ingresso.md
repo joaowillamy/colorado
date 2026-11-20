@@ -1,6 +1,6 @@
-# Reembolso do ingresso da Imersão AWS & IA
+# Reembolso do ingresso da Imersão Joao Willamy
 
-Este documento cobre a política de reembolso da Imersão AWS & IA: prazo, condições
+Este documento cobre a política de reembolso da Imersão Joao Willamy: prazo, condições
 e o que acontece depois que o evento começa.
 
 O ingresso pode ser reembolsado em **até 7 dias após a compra**, conforme o Código

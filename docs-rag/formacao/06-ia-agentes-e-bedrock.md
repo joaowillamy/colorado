@@ -1,4 +1,4 @@
-# Formação AWS 5.0 — IA, agentes e Amazon Bedrock
+# Formação do Joao Willamy 5.0 — IA, agentes e Amazon Bedrock
 
 ## AWS & IA
 

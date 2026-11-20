@@ -1,6 +1,6 @@
-# Ingresso Normal da Imersão AWS & IA: preço e o que inclui
+# Ingresso Normal da Imersão Joao Willamy: preço e o que inclui
 
-Este documento cobre o ingresso Normal da Imersão AWS & IA — o mais barato dos dois
+Este documento cobre o ingresso Normal da Imersão Joao Willamy — o mais barato dos dois
 tipos disponíveis.
 
 **Valor promocional: R$ 47.** O próximo lote será R$ 67.

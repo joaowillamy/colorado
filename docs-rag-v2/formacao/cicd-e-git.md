@@ -1,4 +1,4 @@
-# CI/CD e Git na Formação AWS: Code Build, Code Deploy e Code Pipeline
+# CI/CD e Git na Formação do Joao Willamy: Code Build, Code Deploy e Code Pipeline
 
 Este documento cobre a esteira de integração e entrega contínua ensinada na Formação
 AWS, aplicada ao projeto BIA, além dos fundamentos de Git.

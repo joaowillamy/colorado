@@ -1,4 +1,4 @@
-# Formação AWS 5.0 — Containers, deploy e infraestrutura como código
+# Formação do Joao Willamy 5.0 — Containers, deploy e infraestrutura como código
 
 ## ECS
 

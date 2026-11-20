@@ -1,14 +1,14 @@
-# Suporte da Formação AWS e sinalizações usadas na grade
+# Suporte da Formação do Joao Willamy e sinalizações usadas na grade
 
-Este documento cobre onde o aluno da Formação AWS tira dúvidas e o que significam as
+Este documento cobre onde o aluno da Formação do Joao Willamy tira dúvidas e o que significam as
 marcações que aparecem na grade de conteúdo.
 
 ## Suporte
 
-Dúvidas sobre a Formação AWS são tratadas pelo suporte no WhatsApp:
+Dúvidas sobre a Formação do Joao Willamy são tratadas pelo suporte no WhatsApp:
 https://links.formacaoaws.com.br/suporte-formacao-aws-grade
 
-Redes do Henrylle Maia no YouTube e Instagram: /henryllemaia
+Redes do Joao Willamy no YouTube e Instagram: /henryllemaia
 
 ## Sinalizações usadas na grade
 

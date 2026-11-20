@@ -1,9 +1,9 @@
-# Terraform e infraestrutura como código na Formação AWS
+# Terraform e infraestrutura como código na Formação do Joao Willamy
 
-Este documento responde se a Formação AWS ensina Terraform e IaC, e detalha o que é
+Este documento responde se a Formação do Joao Willamy ensina Terraform e IaC, e detalha o que é
 coberto no módulo.
 
-**Sim, a Formação AWS ensina Terraform.** O tema é tratado como infraestrutura como
+**Sim, a Formação do Joao Willamy ensina Terraform.** O tema é tratado como infraestrutura como
 código (IaC) aplicada ao projeto BIA: o aluno escreve Terraform para provisionar e
 destruir os recursos do projeto na AWS, em vez de criar tudo pelo console.
 

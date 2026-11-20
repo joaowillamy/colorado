@@ -1,6 +1,6 @@
-# Pré-requisitos para participar da Imersão AWS & IA
+# Pré-requisitos para participar da Imersão Joao Willamy
 
-Este documento explica o que o aluno precisa ter ou saber antes da Imersão AWS & IA.
+Este documento explica o que o aluno precisa ter ou saber antes da Imersão Joao Willamy.
 
 **Não é necessário ter conta AWS criada antes do evento** — a criação da conta faz
 parte do setup do Dia 1.

@@ -1,6 +1,6 @@
-# Projeto BIA na Formação AWS: Auto Scaling e versão Serverless
+# Projeto BIA na Formação do Joao Willamy: Auto Scaling e versão Serverless
 
-Este documento cobre os módulos da Formação AWS que trabalham o projeto BIA — a
+Este documento cobre os módulos da Formação do Joao Willamy que trabalham o projeto BIA — a
 aplicação usada como fio condutor do curso — em escala e em arquitetura serverless.
 
 ## BIA Auto Scaling

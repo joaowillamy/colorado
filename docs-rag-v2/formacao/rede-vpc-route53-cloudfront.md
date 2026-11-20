@@ -1,6 +1,6 @@
-# Rede e CDN na Formação AWS: VPC, Route 53 e CloudFront
+# Rede e CDN na Formação do Joao Willamy: VPC, Route 53 e CloudFront
 
-Este documento cobre a camada de rede da AWS na Formação AWS: como a rede privada é
+Este documento cobre a camada de rede da AWS na Formação do Joao Willamy: como a rede privada é
 desenhada e como o conteúdo é distribuído por CDN.
 
 ## VPC

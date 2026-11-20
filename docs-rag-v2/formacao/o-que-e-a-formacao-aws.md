@@ -1,9 +1,9 @@
-# O que é a Formação AWS 5.0
+# O que é a Formação do Joao Willamy 5.0
 
-Este documento apresenta a Formação AWS 5.0 como produto: o que ela é, para quem é,
+Este documento apresenta a Formação do Joao Willamy 5.0 como produto: o que ela é, para quem é,
 e quanto tempo de conteúdo e de acesso o aluno tem.
 
-A Formação AWS não é apenas um conjunto de aulas: é uma jornada completa de
+A Formação do Joao Willamy não é apenas um conjunto de aulas: é uma jornada completa de
 aprendizado, com mentoria e acompanhamento estruturado para acelerar o
 desenvolvimento do aluno. Esse acompanhamento é chamado de **Desafios**.
 

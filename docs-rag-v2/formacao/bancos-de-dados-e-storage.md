@@ -1,7 +1,7 @@
-# Bancos de dados e storage na Formação AWS: RDS, S3, EFS e ElastiCache
+# Bancos de dados e storage na Formação do Joao Willamy: RDS, S3, EFS e ElastiCache
 
 Este documento cobre as opções gerenciadas de banco de dados e de armazenamento
-ensinadas na Formação AWS.
+ensinadas na Formação do Joao Willamy.
 
 ## RDS
 

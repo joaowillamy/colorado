@@ -1,6 +1,6 @@
-# Labs Especiais da Formação AWS
+# Labs Especiais da Formação do Joao Willamy
 
-Este documento lista os Labs Especiais da Formação AWS — cenários práticos avulsos,
+Este documento lista os Labs Especiais da Formação do Joao Willamy — cenários práticos avulsos,
 fora da trilha principal. A lista continua aumentando ao longo do tempo.
 
 - Aurora Serverless

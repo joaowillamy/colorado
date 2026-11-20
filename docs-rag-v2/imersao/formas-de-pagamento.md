@@ -1,6 +1,6 @@
-# Formas de pagamento da Imersão AWS & IA
+# Formas de pagamento da Imersão Joao Willamy
 
-Este documento cobre como pagar o ingresso da Imersão AWS & IA e quais condições
+Este documento cobre como pagar o ingresso da Imersão Joao Willamy e quais condições
 existem.
 
 O pagamento do ingresso é feito por **cartão ou Pix**, na página de checkout.
