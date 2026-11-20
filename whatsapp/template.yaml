@@ -35,6 +35,22 @@ Resources:
   Topico:
     Type: AWS::SNS::Topic
 
+  # Permite que o End User Messaging Social publique no tópico.
+  TopicoPolicy:
+    Type: AWS::SNS::TopicPolicy
+    Properties:
+      Topics: [!Ref Topico]
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: PermitirEndUserMessagingSocial
+            Effect: Allow
+            Principal: { Service: social-messaging.amazonaws.com }
+            Action: sns:Publish
+            Resource: !Ref Topico
+            Condition:
+              StringEquals: { "aws:SourceAccount": !Ref AWS::AccountId }
+
   Dlq:
     Type: AWS::SQS::Queue
     Properties:
@@ -44,7 +60,7 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       # >= 6x o timeout da Lambda (recomendação da AWS)
-      VisibilityTimeout: 180
+      VisibilityTimeout: 360
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt Dlq.Arn
         maxReceiveCount: 5
@@ -76,7 +92,8 @@ Resources:
       Handler: src/handler.handler
       Runtime: nodejs22.x
       Architectures: [arm64]
-      Timeout: 30
+      # RAG + até 5 chamadas Converse (loop de tools) cabem mal em 30 s
+      Timeout: 60
       MemorySize: 512
       # Limita chamadas simultâneas ao Bedrock (cota de requisições por minuto)
       ReservedConcurrentExecutions: 10
@@ -99,9 +116,15 @@ Resources:
             - Effect: Allow
               Action: [bedrock:Retrieve]
               Resource: !Sub arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:knowledge-base/${KbId}
+            # O guardrail usa tier STANDARD (português), que roda via perfil cross-region:
+            # além do guardrail, precisa do guardrail-profile em cada região de destino.
             - Effect: Allow
               Action: [bedrock:ApplyGuardrail]
-              Resource: !Sub arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:guardrail/*
+              Resource:
+                - !Sub arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:guardrail/*
+                - !Sub arn:aws:bedrock: us-east-2:${AWS::AccountId}:guardrail-profile/us.guardrail.v1:0
+                - !Sub arn:aws:bedrock:us-east-2:${AWS::AccountId}:guardrail-profile/us.guardrail.v1:0
+                - !Sub arn:aws:bedrock:us-west-2:${AWS::AccountId}:guardrail-profile/us.guardrail.v1:0
             - Effect: Allow
               Action: [social-messaging:SendWhatsAppMessage]
               Resource: "*"

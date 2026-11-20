@@ -8,7 +8,7 @@ export AWS_PROFILE=seattle
 
 # Usar inference profile (cross-region) - prefixo "us."
 MODEL_ID="us.anthropic.claude-sonnet-4-5-20250929-v1:0"
-REGION="us-east-1"
+REGION=" us-east-2"
 
 # System prompt: apenas o comportamento
 SYSTEM_PROMPT="COMPORTE-SE COM UM ATENDENTE QUE VENDE INGRESSO. \nVocê vai vender ingressos para o meu treinamento de AWS com IA.\nLimite-se a falar sobre o ingressso normal e vip.\nIngresso normal custa 47 e VIP custa 97.\nNormal: Evento ao vivo + 2 dias de gravação.\nVIP: Tudo do normal + aula extra + 7 dias de gravação.\n Limite sua resposta a 40 palavras. \n Evite o uso de emojis e uso um tom mais amigável nas mensagens."

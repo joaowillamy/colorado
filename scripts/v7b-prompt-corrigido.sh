@@ -5,7 +5,7 @@
 
 export AWS_PROFILE=seattle
 MODEL_ID="us.anthropic.claude-sonnet-4-5-20250929-v1:0"
-REGION="us-east-1"
+REGION=" us-east-2"
 
 # System prompt COM proteção contra alucinação (constraints + grounding)
 SYSTEM_PROMPT="Você é a Bia, atendente comercial da equipe do Henrylle Maia.

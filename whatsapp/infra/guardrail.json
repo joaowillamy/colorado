@@ -1,0 +1,23 @@
+{
+  "name": "whatsapp-atendente",
+  "description": "Guardrail do atendente de WhatsApp (Imersao AWS)",
+  "blockedInputMessaging": "Nao posso ajudar com isso por aqui. Quer falar sobre os ingressos da Imersao?",
+  "blockedOutputsMessaging": "Nao consegui responder isso. Vou pedir para alguem do time falar com voce.",
+  "contentPolicyConfig": {
+    "filtersConfig": [
+      { "type": "HATE",          "inputStrength": "MEDIUM", "outputStrength": "MEDIUM" },
+      { "type": "INSULTS",       "inputStrength": "MEDIUM", "outputStrength": "MEDIUM" },
+      { "type": "SEXUAL",        "inputStrength": "MEDIUM", "outputStrength": "MEDIUM" },
+      { "type": "VIOLENCE",      "inputStrength": "MEDIUM", "outputStrength": "MEDIUM" },
+      { "type": "MISCONDUCT",    "inputStrength": "MEDIUM", "outputStrength": "MEDIUM" },
+      { "type": "PROMPT_ATTACK", "inputStrength": "HIGH",   "outputStrength": "NONE" }
+    ],
+    "tierConfig": { "tierName": "STANDARD" }
+  },
+  "sensitiveInformationPolicyConfig": {
+    "piiEntitiesConfig": [
+      { "type": "CREDIT_DEBIT_CARD_NUMBER", "action": "BLOCK" }
+    ]
+  },
+  "crossRegionConfig": { "guardrailProfileIdentifier": "us.guardrail.v1:0" }
+}

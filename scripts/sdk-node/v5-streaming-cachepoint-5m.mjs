@@ -9,7 +9,7 @@ import { fileURLToPath } from "url";
 const MODEL_ID = "us.anthropic.claude-sonnet-4-6";
 
 const client = new BedrockRuntimeClient({
-  region: "us-east-1",
+  region: " us-east-2",
   profile: "seattle",
 });
 

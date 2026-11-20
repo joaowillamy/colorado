@@ -8,7 +8,7 @@
 
 | Prefixo | Regiões Incluídas |
 |---------|-------------------|
-| `us.` | Regiões dos EUA (us-east-1, us-west-2, etc.) |
+| `us.` | Regiões dos EUA ( us-east-2, us-west-2, etc.) |
 | `eu.` | Regiões da Europa |
 | `ap.` | Regiões da Ásia-Pacífico |
 
@@ -22,9 +22,9 @@
 O preço é calculado baseado na **região de onde você chama** o inference profile, não nas regiões para onde ele roteia.
 
 **Exemplo:**
-- Você chama de `us-east-1`
+- Você chama de ` us-east-2`
 - Inference profile roteia para `us-west-2`
-- **Você paga o preço de `us-east-1`**
+- **Você paga o preço de ` us-east-2`**
 
 ---
 -  Inference Profile é como um **load balancer** para modelos de IA.

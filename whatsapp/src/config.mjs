@@ -4,7 +4,7 @@
 const num = (v, padrao) => (v === undefined || v === "" ? padrao : Number(v));
 
 export const config = {
-  region: process.env.AWS_REGION ?? "us-east-1",
+  region: process.env.AWS_REGION ?? " us-east-2",
 
   // Bedrock
   modelId: process.env.MODEL_ID ?? "us.anthropic.claude-sonnet-4-6",

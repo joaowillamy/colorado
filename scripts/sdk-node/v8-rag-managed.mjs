@@ -32,7 +32,7 @@ import { fileURLToPath } from "url";
 const MODEL_ID = "us.anthropic.claude-sonnet-4-6";
 
 const client = new BedrockRuntimeClient({
-  region: "us-east-1",
+  region: " us-east-2",
   profile: "formacaoaws",
 });
 
@@ -72,7 +72,7 @@ const RERANKING = process.env.RERANKING ?? "MANAGED";
 const SCORE_MINIMO = Number(process.env.SCORE_MINIMO ?? 0.5);
 
 const kbClient = new BedrockAgentRuntimeClient({
-  region: "us-east-1",
+  region: " us-east-2",
   profile: "formacaoaws",
 });
 
