@@ -4,6 +4,7 @@
 import { SendWhatsAppMessageCommand } from "@aws-sdk/client-socialmessaging";
 import { social } from "./clients.mjs";
 import { config } from "./config.mjs";
+import { normalizarTelefone } from "./telefone.mjs";
 
 const enviar = (phoneNumberId, payload) =>
   social.send(
@@ -17,7 +18,7 @@ const enviar = (phoneNumberId, payload) =>
 export const enviarTexto = (phoneNumberId, telefone, texto) =>
   enviar(phoneNumberId, {
     recipient_type: "individual",
-    to: telefone,
+    to: normalizarTelefone(telefone),
     type: "text",
     text: { body: texto },
   });

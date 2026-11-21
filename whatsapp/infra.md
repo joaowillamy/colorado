@@ -50,6 +50,7 @@ Casos que costumam acontecer neste projeto (use como dica, mas confirme pelo err
 | Falha | Ação provável a conceder |
 |---|---|
 | Primeira chamada ao Claude (bloco 1) | `aws-marketplace:Subscribe`, `aws-marketplace:Unsubscribe`, `aws-marketplace:ViewSubscriptions`, `bedrock:InvokeModel` |
+| Vector bucket e índice (bloco 3) | `s3vectors:CreateVectorBucket`, `s3vectors:GetVectorBucket`, `s3vectors:CreateIndex`, `s3vectors:GetIndex` |
 | Criar KB com o role (bloco 3) | `iam:PassRole` no role `whatsapp-atendente-kb-role`, com condição `iam:PassedToService = bedrock.amazonaws.com` |
 | Criar guardrail com perfil cross-region (bloco 4) | `bedrock:CreateGuardrail` e `bedrock:CreateGuardrailVersion` em `guardrail/*` e `guardrail-profile/us.guardrail.v1:0` |
 | Deploy do stack (bloco 5) | permissões de CloudFormation, IAM (criar role da Lambda), Lambda, SQS, SNS, DynamoDB e S3 (bucket do SAM) |
@@ -61,8 +62,8 @@ Erro de permissão **da Lambda em tempo de execução** (visto nos logs, não no
 
 | # | Premissa | Por quê |
 |---|---|---|
-| P1 | Região ** us-east-2** | É a região de todos os scripts e do `config.mjs`. |
-| P2 | Knowledge Base do tipo **MANAGED** (embedding e reranker gerenciados) | `src/rag.mjs` chama `Retrieve` com `managedSearchConfiguration` + `rerankingModelType`. Um KB com S3 Vectors rejeita isso. Veja o Apêndice A para a variante S3 Vectors. |
+| P1 | Região **us-east-2** | Região em uso pelo usuário (o `config.mjs` e os scripts a usam como padrão). |
+| P2 | Knowledge Base **não gerenciado**, com **S3 Vectors** e embedding Titan Text Embeddings V2 (1024 dimensões) | O KB gerenciado (`type: MANAGED`) **não existe em us-east-2** (a criação devolve `KnowledgeBase type MANAGED is not supported`). S3 Vectors, Titan v2 e Cohere Embed v4 existem em us-east-2. O `src/rag.mjs` usa `vectorSearchConfiguration`. |
 | P3 | Modelo `us.anthropic.claude-sonnet-4-6` (inference profile) | `config.mjs`, `template.yaml` e v9. |
 | P4 | Infra do app via **AWS SAM** (`template.yaml`); recursos que não estão nele (S3, KB, guardrail, IAM do KB) via **AWS CLI** | O template já existe e cobre SNS, SQS, DLQ, DynamoDB, Lambda e IAM da Lambda. |
 | P5 | O guardrail usa a configuração deste documento (bloco 4) | O PDF `Curso_ Amazon Bedrock - Modulo de Guardrails.pdf` não pôde ser lido como texto. Se o guardrail original (`9f09uqw8s8hs`, versão 3) tiver outras regras, ajuste o `guardrail.json`. |
@@ -77,7 +78,7 @@ Cada bloco abaixo tem um script que faz exatamente o que o bloco descreve. **Pre
 | `env.sh` | 0 | Variáveis e funções comuns (`salvar`, `exigir`). Não se executa, é lido pelos outros. |
 | `01-bedrock.sh` | 1 | Confere inference profile e faz uma chamada `converse`. |
 | `02-s3-docs.sh` | 2 | Cria o bucket (com bloqueio de acesso público) e sincroniza `docs-rag-v2/`. |
-| `03-knowledge-base.sh` | 3 | Role do KB, KB gerenciado, data source S3, ingestão e `retrieve` de teste. |
+| `03-knowledge-base.sh` | 3 | Vector bucket e índice (S3 Vectors), role do KB, KB com S3 Vectors, data source S3, ingestão e `retrieve` de teste. |
 | `guardrail.json` + `04-guardrail.sh` | 4 | Cria o guardrail a partir do JSON, publica a versão e testa 3 frases. |
 | `05-deploy-stack.sh` | 5 | Checa a concorrência da conta, `npm install`, `npm test`, `sam build`, `sam deploy`, grava saídas. |
 | `06-seed-dynamodb.sh` | 6 | Insere os alunos `maria` e `joao`. |
@@ -106,7 +107,7 @@ Pré-passo manual do bloco 1: formulário de caso de uso da Anthropic no console
 flowchart TD
     B0[0. Ferramentas e credenciais] --> B1[1. Bedrock: acesso ao modelo]
     B0 --> B2[2. S3: documentos do RAG]
-    B2 --> B3[3. Knowledge Base gerenciado]
+    B2 --> B3[3. Knowledge Base com S3 Vectors]
     B1 --> B4[4. Guardrail]
     B1 --> B5
     B3 --> B5[5. Stack SAM: SNS, SQS, DLQ, DynamoDB, Lambda]
@@ -149,14 +150,14 @@ Cliente → WhatsApp (Meta) → End User Messaging Social → SNS (padrão) → 
 
 Requisitos:
 
-- AWS CLI v2 recente (o comando `retrieve` com `managedSearchConfiguration` e os comandos de KB gerenciado são novos; atualize se der "unknown parameter").
+- AWS CLI v2 recente (comandos `s3vectors` e de KB com S3 Vectors; atualize se der "unknown parameter").
 - AWS SAM CLI.
 - Node.js 22 (o template usa `nodejs22.x`) e `npm`.
 - Um usuário/role com permissão para criar: S3, IAM, Bedrock (KB, guardrail), CloudFormation, SNS, SQS, DynamoDB, Lambda, `social-messaging:*`.
   O usuário que cria o KB precisa de `iam:PassRole` para o role do KB, com condição `iam:PassedToService = bedrock.amazonaws.com`.
 
 ```bash
-export AWS_REGION= us-east-2
+export AWS_REGION=us-east-2
 export AWS_DEFAULT_REGION=$AWS_REGION
 # export AWS_PROFILE=formacaoaws     # os scripts do curso usam este profile
 export ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)   # ➜ guardar
@@ -203,7 +204,7 @@ aws bedrock-runtime converse --model-id $MODEL_ID \
 
 ## 4. Bloco 2: S3, documentos do RAG
 
-**Depende de:** 0. **Por quê:** o Knowledge Base lê os documentos de um bucket S3. A pasta `docs-rag-v2/**` tem 33 arquivos `.md` (cerca de 20 KB) em duas pastas:
+**Depende de:** 0. **Por quê:** o Knowledge Base lê os documentos de um bucket S3. A pasta `docs-rag-v2/**` tem 34 arquivos `.md` (cerca de 21 KB) em duas pastas:
 
 - `docs-rag-v2/imersao/` (17 arquivos: preço, datas, reembolso, certificado, VIP etc.)
 - `docs-rag-v2/formacao/` (16 arquivos: containers, Lambda, Bedrock, Terraform etc.)
@@ -212,7 +213,7 @@ O `rag.mjs` monta o campo `fonte` com os **dois últimos segmentos** da URI (`im
 
 ```bash
 aws s3api create-bucket --bucket $BUCKET_DOCS --region $AWS_REGION
-# (em us-east-2 NÃO se passa --create-bucket-configuration)
+# (em us-east-1 NÃO se passa --create-bucket-configuration)
 
 aws s3 sync /home/will/aws/colorado/docs-rag-v2/ s3://$BUCKET_DOCS/ --exclude ".*"
 ```
@@ -220,7 +221,7 @@ aws s3 sync /home/will/aws/colorado/docs-rag-v2/ s3://$BUCKET_DOCS/ --exclude ".
 **Verificar:**
 
 ```bash
-aws s3 ls s3://$BUCKET_DOCS/ --recursive | wc -l      # esperado: 33
+aws s3 ls s3://$BUCKET_DOCS/ --recursive | wc -l      # esperado: 34
 aws s3 ls s3://$BUCKET_DOCS/imersao/ | head -3
 ```
 
@@ -228,138 +229,63 @@ Todo bucket novo já nasce com o bloqueio de acesso público ligado. Não torne 
 
 ---
 
-## 5. Bloco 3: Knowledge Base gerenciado (RAG)
+## 5. Bloco 3: Knowledge Base com S3 Vectors (RAG)
 
-**Depende de:** 2 (bucket com documentos). **Por quê:** é o banco vetorial do RAG. No tipo **MANAGED**, o Bedrock cuida de armazenamento, indexação, embedding e reranking. Não há vector store para você criar. Você não precisa pedir acesso a modelo de embedding nem de reranking.
+**Depende de:** 2 (bucket com documentos) e 1 (o Bedrock invoca o modelo de embedding). **Script:** `infra/03-knowledge-base.sh`. **Por quê:** é o banco vetorial do RAG. O Bedrock lê os documentos do S3, gera embeddings com o Titan Text Embeddings V2 e guarda os vetores num índice do **S3 Vectors**.
 
-Consequências para o código (já refletidas em `rag.mjs` e `config.mjs`):
+Por que não o KB gerenciado: ele não é suportado em us-east-2 (veja P2). A lista de regiões do KB gerenciado, na documentação, não inclui us-east-2.
 
-- `Retrieve` usa `managedSearchConfiguration { numberOfResults, rerankingModelType }`. `vectorSearchConfiguration` é rejeitado.
-- A busca é sempre híbrida (vetor + palavra-chave).
-- O reranker gerenciado só existe se o embedding também for gerenciado (`embeddingModelType: MANAGED`). O tipo de embedding **não pode ser alterado depois**. Se escolher `CUSTOM` e o código pedir `MANAGED`, o erro é `ValidationException: Managed reranking is not supported for knowledge bases with custom embedding models`.
-- A escala de `score` é outra. Nos testes do curso, o managed devolveu valores perto de 1.0 mesmo para perguntas irrelevantes ("bom dia" deu 0.945). `SCORE_MINIMO=0.5` no `config.mjs` filtra pouco. É uma limitação conhecida, não um erro de infra.
-- Custo da busca: US$ 1,00 por mil consultas (medido nas aulas, confirme na página de preços).
+Consequências para o código (já aplicadas em `rag.mjs` e `config.mjs`):
 
-### 5.1 IAM role do KB
+- `Retrieve` usa `vectorSearchConfiguration { numberOfResults }`. `managedSearchConfiguration` é rejeitado por KB não gerenciado.
+- Não há reranker. A ordem é só por similaridade vetorial.
+- Escala de `score` do S3 Vectors: nos testes do curso (v7), o melhor trecho dá cerca de 0,44 e "bom dia" dá cerca de 0,36, tudo irrelevante. O padrão do `SCORE_MINIMO` agora é **0,4** (era 0,5 no KB gerenciado). Ajuste com a variável de ambiente `SCORE_MINIMO` na Lambda conforme os testes.
+- O embedding e as dimensões não mudam depois que o índice é criado. A dimensão do índice (1024) tem de ser igual à do modelo.
 
-```bash
-cat > /tmp/kb-trust.json <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [{
-    "Effect": "Allow",
-    "Principal": { "Service": "bedrock.amazonaws.com" },
-    "Action": "sts:AssumeRole",
-    "Condition": {
-      "StringEquals": { "aws:SourceAccount": "$ACCOUNT_ID" },
-      "ArnLike": { "aws:SourceArn": "arn:aws:bedrock:$AWS_REGION:$ACCOUNT_ID:knowledge-base/*" }
-    }
-  }]
-}
-EOF
+### 5.1 O que o script cria, na ordem
 
-cat > /tmp/kb-s3.json <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    { "Sid": "S3List", "Effect": "Allow", "Action": "s3:ListBucket",
-      "Resource": "arn:aws:s3:::$BUCKET_DOCS",
-      "Condition": { "StringEquals": { "aws:ResourceAccount": "$ACCOUNT_ID" } } },
-    { "Sid": "S3Get", "Effect": "Allow", "Action": "s3:GetObject",
-      "Resource": "arn:aws:s3:::$BUCKET_DOCS/*",
-      "Condition": { "StringEquals": { "aws:ResourceAccount": "$ACCOUNT_ID" } } }
-  ]
-}
-EOF
+1. **Vector bucket** `whatsapp-atendente-vectors-<conta>-us-east-2` (`aws s3vectors create-vector-bucket`).
+2. **Índice** `docs-rag-v2`: `--data-type float32 --dimension 1024 --distance-metric cosine`, com `nonFilterableMetadataKeys` = `AMAZON_BEDROCK_METADATA` e `AMAZON_BEDROCK_TEXT` (campos que o Bedrock grava e que não podem ser filtro).
+3. **Role do KB** `whatsapp-atendente-kb-role`, com confiança em `bedrock.amazonaws.com` (condições `aws:SourceAccount` e `aws:SourceArn` do KB) e três policies inline:
+   - `kb-s3-read`: `s3:ListBucket` e `s3:GetObject` no bucket de documentos;
+   - `kb-embed-model`: `bedrock:InvokeModel` no `amazon.titan-embed-text-v2:0` da região, mais `ListFoundationModels`/`ListCustomModels`;
+   - `kb-s3-vectors`: `s3vectors:PutVectors`, `GetVectors`, `DeleteVectors`, `QueryVectors`, `GetIndex` no ARN do índice.
+4. **Knowledge Base** `type: VECTOR`, `embeddingModelArn` do Titan v2 (`dimensions: 1024`, `embeddingDataType: FLOAT32`) e `storageConfiguration` `S3_VECTORS` com o `indexArn` (`arn:aws:s3vectors:REGIAO:CONTA:bucket/<bucket>/index/<indice>`).
+5. **Data source** `type: S3` apontando para o bucket de documentos, com `--data-deletion-policy DELETE` (apaga os vetores se o data source for removido; o bucket não é afetado). Chunking padrão: cada documento tem pouco mais de 1 KB e vira um trecho só.
+6. **Ingestão** (`start-ingestion-job`) e espera até `COMPLETE`.
+7. **Verificação**: `retrieve` com "Quanto custa o ingresso VIP?". O documento `imersao/ingresso-vip-preco-e-inclusos.md` precisa estar no top 5, senão o script falha.
 
-aws iam create-role --role-name ${PROJ}-kb-role \
-  --assume-role-policy-document file:///tmp/kb-trust.json
-aws iam put-role-policy --role-name ${PROJ}-kb-role \
-  --policy-name kb-s3-read --policy-document file:///tmp/kb-s3.json
+O KB e o bucket de vetores ficam na mesma região do restante da stack. A IAM da Lambda (`bedrock:Retrieve` no ARN do KB com `${AWS::Region}`) já está correta para isso.
 
-export KB_ROLE_ARN=arn:aws:iam::$ACCOUNT_ID:role/${PROJ}-kb-role     # ➜ guardar
-sleep 15    # propagação do IAM
-```
+Se a criação do KB falhar por permissão no role, a alternativa é criar o KB pelo console (**Bedrock > Knowledge bases > Create > S3 vector bucket > Quick create**), que cria o role e o índice sozinho. Depois, guarde `KB_ID` e `DS_ID` em `infra/.state.env`.
 
-Se a criação do KB reclamar de permissão no role, a alternativa é criar o KB pelo console (**Bedrock AgentCore > Built-in tools > Knowledge Base > Create Managed Knowledge Base**) escolhendo "Create and use a new service role", e pular para 5.3.
+Sempre que mudar algo em `docs-rag-v2/`, rode `./02-s3-docs.sh` e depois `./03-knowledge-base.sh` (que refaz só a ingestão).
 
-### 5.2 Criar o KB e o data source
+### 5.2 Comandos equivalentes (referência)
 
 ```bash
-cat > /tmp/kb-config.json <<'EOF'
-{
-  "type": "MANAGED",
-  "managedKnowledgeBaseConfiguration": { "embeddingModelType": "MANAGED" }
-}
-EOF
+aws s3vectors create-vector-bucket --vector-bucket-name $VECTOR_BUCKET
+aws s3vectors create-index --vector-bucket-name $VECTOR_BUCKET --index-name docs-rag-v2 \
+  --data-type float32 --dimension 1024 --distance-metric cosine \
+  --metadata-configuration '{"nonFilterableMetadataKeys":["AMAZON_BEDROCK_METADATA","AMAZON_BEDROCK_TEXT"]}'
 
-export KB_ID=$(aws bedrock-agent create-knowledge-base \
-  --name ${PROJ}-kb \
-  --description "Documentos da Imersao e da Formacao do Joao Willamy" \
-  --role-arn $KB_ROLE_ARN \
-  --knowledge-base-configuration file:///tmp/kb-config.json \
-  --query 'knowledgeBase.knowledgeBaseId' --output text)                   # ➜ guardar (vai para KbId)
+# knowledge-base-configuration
+{ "type": "VECTOR", "vectorKnowledgeBaseConfiguration": {
+    "embeddingModelArn": "arn:aws:bedrock:us-east-2::foundation-model/amazon.titan-embed-text-v2:0",
+    "embeddingModelConfiguration": { "bedrockEmbeddingModelConfiguration": { "dimensions": 1024, "embeddingDataType": "FLOAT32" } } } }
+# storage-configuration
+{ "type": "S3_VECTORS", "s3VectorsConfiguration": { "indexArn": "arn:aws:s3vectors:us-east-2:<conta>:bucket/<bucket>/index/docs-rag-v2" } }
 
-# Espere ficar ACTIVE (2 a 5 min)
-until [ "$(aws bedrock-agent get-knowledge-base --knowledge-base-id $KB_ID \
-  --query 'knowledgeBase.status' --output text)" = "ACTIVE" ]; do sleep 15; done
-
-cat > /tmp/ds-config.json <<EOF
-{
-  "type": "MANAGED_KNOWLEDGE_BASE_CONNECTOR",
-  "managedKnowledgeBaseConnectorConfiguration": {
-    "connectorParameters": {
-      "type": "S3",
-      "version": "1",
-      "connectionConfiguration": {
-        "bucketName": "$BUCKET_DOCS",
-        "bucketOwnerAccountId": "$ACCOUNT_ID"
-      },
-      "deletionProtectionConfiguration": { "enableDeletionProtection": false }
-    }
-  }
-}
-EOF
-
-export DS_ID=$(aws bedrock-agent create-data-source \
-  --knowledge-base-id $KB_ID --name s3-docs-rag-v2 \
-  --data-source-configuration file:///tmp/ds-config.json \
-  --data-deletion-policy DELETE \
-  --query 'dataSource.dataSourceId' --output text)                         # ➜ guardar
-```
-
-Notas:
-
-- O exemplo oficial também traz `mediaExtractionConfiguration` (imagens) e `--vector-ingestion-configuration '{"parsingConfiguration":{"parsingStrategy":"SMART_PARSING"}}'`. Os arquivos aqui são só Markdown, então foram omitidos. Se a API exigir o bloco de mídia, copie-o do exemplo oficial.
-- Chunking padrão ("Default chunking", recomendado pela doc) serve: cada documento tem menos de 1,1 KB e vira praticamente um trecho só.
-- `--data-deletion-policy DELETE` apaga os vetores se o data source for removido (o bucket não é afetado).
-
-### 5.3 Ingestão (sincronizar)
-
-```bash
-JOB=$(aws bedrock-agent start-ingestion-job --knowledge-base-id $KB_ID --data-source-id $DS_ID \
-  --query 'ingestionJob.ingestionJobId' --output text)
-
-until [ "$(aws bedrock-agent get-ingestion-job --knowledge-base-id $KB_ID --data-source-id $DS_ID \
-  --ingestion-job-id $JOB --query 'ingestionJob.status' --output text)" = "COMPLETE" ]; do sleep 10; done
-
-aws bedrock-agent get-ingestion-job --knowledge-base-id $KB_ID --data-source-id $DS_ID \
-  --ingestion-job-id $JOB --query 'ingestionJob.statistics'
-```
-
-Se o status virar `FAILED`, leia `failureReasons` no mesmo comando.
-Sempre que mudar algo em `docs-rag-v2/`, repita `aws s3 sync` + `start-ingestion-job`.
-
-### 5.4 Verificar o RAG
-
-```bash
+aws bedrock-agent create-knowledge-base --name whatsapp-atendente-kb --role-arn $KB_ROLE_ARN \
+  --knowledge-base-configuration file://kb.json --storage-configuration file://storage.json
+aws bedrock-agent create-data-source --knowledge-base-id $KB_ID --name s3-docs-rag-v2 \
+  --data-source-configuration '{"type":"S3","s3Configuration":{"bucketArn":"arn:aws:s3:::<bucket-docs>"}}' \
+  --data-deletion-policy DELETE
+aws bedrock-agent start-ingestion-job --knowledge-base-id $KB_ID --data-source-id $DS_ID
 aws bedrock-agent-runtime retrieve --knowledge-base-id $KB_ID \
   --retrieval-query '{"text":"Quanto custa o ingresso VIP?"}' \
-  --retrieval-configuration '{"managedSearchConfiguration":{"numberOfResults":5,"rerankingModelType":"MANAGED"}}' \
-  --query 'retrievalResults[].{score:score,fonte:location.s3Location.uri}'
+  --retrieval-configuration '{"vectorSearchConfiguration":{"numberOfResults":5}}'
 ```
-
-Esperado: o primeiro resultado vem de `imersao/ingresso-vip-preco-e-inclusos.md` (R$ 97, upgrade de R$ 50).
 
 ---
 
@@ -438,7 +364,7 @@ Como o guardrail usa um **perfil cross-region**, quem invoca precisa de `bedrock
 
 Variáveis de ambiente da Lambda (vêm do template; as demais usam o padrão do `config.mjs`):
 `TABELA`, `KB_ID`, `MODEL_ID`, `GUARDRAIL_ID`, `GUARDRAIL_VERSION`, `LOCK_SEG=60`.
-Opcionais, não definidas no template: `MAX_TOKENS` (512), `TEMPERATURE` (0.7), `MAX_TURNOS_TOOL` (5), `TOP_K` (20), `RERANKING` (MANAGED), `SCORE_MINIMO` (0.5), `TTL_CONVERSA_SEG`, `TTL_MENSAGEM_SEG`, `MAX_MENSAGENS_HISTORICO` (20), `ORIGINATION_PHONE_NUMBER_ID`, `META_API_VERSION` (v20.0).
+Opcionais, não definidas no template: `MAX_TOKENS` (512), `TEMPERATURE` (0.7), `MAX_TURNOS_TOOL` (5), `TOP_K` (20), `SCORE_MINIMO` (0.4), `TTL_CONVERSA_SEG`, `TTL_MENSAGEM_SEG`, `MAX_MENSAGENS_HISTORICO` (20), `ORIGINATION_PHONE_NUMBER_ID`, `META_API_VERSION` (v20.0).
 
 ### 7.2 Ajustes feitos no `template.yaml`
 
@@ -446,7 +372,7 @@ Estes ajustes **já foram aplicados** ao `whatsapp/template.yaml`:
 
 | | Mudança | Motivo |
 |---|---|---|
-| A | `bedrock:ApplyGuardrail` agora inclui `guardrail-profile/us.guardrail.v1:0` em us-east-2, us-east-2 e us-west-2 | O guardrail usa tier STANDARD, que roda via perfil cross-region. Sem isso a chamada falha por permissão. A lista de regiões vem do exemplo da doc; confirme em "Available guardrail profiles" (`guardrails-cross-region-support`). |
+| A | `bedrock:ApplyGuardrail` agora inclui `guardrail-profile/us.guardrail.v1:0` em us-east-1, us-east-2 e us-west-2 | O guardrail usa tier STANDARD, que roda via perfil cross-region. Sem isso a chamada falha por permissão. A lista de regiões vem do exemplo da doc; confirme em "Available guardrail profiles" (`guardrails-cross-region-support`). |
 | B | Novo recurso `TopicoPolicy`: o `social-messaging.amazonaws.com` pode fazer `sns:Publish` no tópico, com condição `aws:SourceAccount` | Sem a policy o End User Messaging não consegue publicar. A condição é um reforço contra confused deputy e não está na doc; se a publicação falhar, remova-a para isolar a causa. |
 | D | `Timeout` da Lambda 30 → 60 s e `VisibilityTimeout` da fila 180 → 360 s | RAG + até 5 chamadas Converse cabem mal em 30 s. A fila mantém 6x o timeout da Lambda. |
 
@@ -627,7 +553,7 @@ Confirmar o **prompt caching**: na 1ª mensagem espere `cacheWrite > 0`; nas seg
 | Chega na fila, Lambda não executa | Event source desabilitado, ou concorrência reservada indisponível | `list-event-source-mappings`; item 7.2.C |
 | `AccessDeniedException` no Converse | Modelo sem acesso, ou falta `InvokeModel` | Bloco 3 |
 | `ValidationException` ... guardrail | Falta permissão em `guardrail-profile`, ou versão inexistente | 7.2.A; conferir `GUARDRAIL_VERSION` |
-| `ValidationException: Managed reranking is not supported` | KB criado com embedding CUSTOM | Recriar o KB com embedding MANAGED |
+| `ValidationException` ao chamar `Retrieve` com `managedSearchConfiguration` | Código antigo apontando para KB não gerenciado | Usar `vectorSearchConfiguration` (já em `rag.mjs`) |
 | Resposta ao cliente falha com erro de ID | Formato do `originationPhoneNumberId` | Definir `ORIGINATION_PHONE_NUMBER_ID` (9.3) |
 | Mensagens boas indo para a DLQ | Throttling da Lambda ou timeout | 7.2.C e timeout (7.2) |
 | `Task timed out after 60` | Loop longo de tools | Subir `Timeout` e `VisibilityTimeout` (7.2) |
@@ -639,7 +565,7 @@ Confirmar o **prompt caching**: na 1ª mensagem espere `cacheWrite > 0`; nas seg
 ### 11.1 Onde está o custo
 
 - Bedrock: tokens de input/output. O prompt do sistema entra com cache (leitura a 10% do preço, escrita a 200%, nos números das aulas). O maior custo é o texto que o RAG injeta no contexto, não a busca.
-- KB gerenciado: busca cobrada por consulta, e armazenamento gerenciado.
+- Knowledge Base com S3 Vectors: embeddings (Titan v2, por token), armazenamento e consultas no S3 Vectors. Confira na página de preços do S3 Vectors.
 - End User Messaging / WhatsApp: tarifa por conversa da Meta (ver preços do WhatsApp) mais tarifa do serviço.
 - SQS, SNS, DynamoDB (sob demanda) e Lambda: centavos neste volume.
 
@@ -672,7 +598,7 @@ aws s3 rb s3://$BUCKET_DOCS --force
 ## 12. Checklist final
 
 - [ ] Bloco 1: `converse` de teste devolve `ok`
-- [ ] Bloco 2: 33 objetos em `s3://$BUCKET_DOCS`
+- [ ] Bloco 2: 34 objetos em `s3://$BUCKET_DOCS`
 - [ ] Bloco 3: ingestão `COMPLETE`, `retrieve` traz o documento do VIP
 - [ ] Bloco 4: guardrail intervém no cartão e não intervém no e-mail
 - [ ] Bloco 5: stack `CREATE_COMPLETE`, assinatura SNS→SQS ativa, policy do tópico com `social-messaging.amazonaws.com`, concorrência da conta (7.2.C) resolvida
@@ -689,22 +615,16 @@ aws s3 rb s3://$BUCKET_DOCS --force
 
 ---
 
-## Apêndice A: variante com S3 Vectors (KB não gerenciado)
+## Apêndice A: variante com KB gerenciado (só em regiões suportadas)
 
-Use só se o usuário quiser o banco vetorial do aluno (v7) em vez do KB gerenciado. **O código atual não funciona com ela sem alteração**: `src/rag.mjs` usa `managedSearchConfiguration`, que um KB custom rejeita. Mudanças necessárias:
+O KB gerenciado (`type: MANAGED`, embedding e reranker gerenciados) existe em us-east-1, us-west-2, eu-west-1, eu-west-2, eu-central-1, ap-northeast-1, ap-south-1, ap-southeast-1, ap-southeast-2, sa-east-1 e us-gov-west-1. **Não existe em us-east-2.** Para usá-lo, a stack inteira tem de ficar em uma dessas regiões (por exemplo us-east-1), e o código muda de volta:
 
-1. `rag.mjs`: trocar por `retrievalConfiguration: { vectorSearchConfiguration: { numberOfResults: config.topK } }` e remover `rerankingModelType`.
-2. `config.mjs`: `SCORE_MINIMO` menor (no v7 o melhor trecho dá cerca de 0,44). A escala é diferente da do KB gerenciado.
-3. `template.yaml`: nenhuma mudança (a policy `bedrock:Retrieve` já aponta para o KB pelo ID).
+1. `rag.mjs`: `retrievalConfiguration: { managedSearchConfiguration: { numberOfResults: config.topK, rerankingModelType: "MANAGED" } }`.
+2. `config.mjs`: `SCORE_MINIMO` volta a 0,5 (a escala do managed é outra; "bom dia" chega a 0,945).
+3. `03-knowledge-base.sh`: criar o KB com `{"type":"MANAGED","managedKnowledgeBaseConfiguration":{"embeddingModelType":"MANAGED"}}`, sem vector bucket, e o data source com `type: MANAGED_KNOWLEDGE_BASE_CONNECTOR`.
+4. O embedding gerenciado dispensa liberar modelo e habilita o reranker. Com `embeddingModelType: CUSTOM` o reranker gerenciado não funciona, e o tipo não muda depois de criado.
 
-Infra extra, em ordem (depende do bloco 2 e do acesso a um modelo de embedding no bloco 1):
-
-1. **Acesso ao modelo de embedding** (por exemplo, Amazon Titan Text Embeddings V2, 1024 dimensões). Só neste caso é preciso liberar o modelo.
-2. **Vector bucket**: `aws s3vectors create-vector-bucket --vector-bucket-name <nome>`.
-3. **Índice**: `aws s3vectors create-index --vector-bucket-name <nome> --index-name <indice> --dimension 1024 --distance-metric cosine --data-type float32 --metadata-configuration '{"nonFilterableMetadataKeys":["AMAZON_BEDROCK_METADATA","AMAZON_BEDROCK_TEXT"]}'`. A dimensão tem de ser igual à do modelo.
-4. **Role do KB** com, além do S3: `bedrock:InvokeModel` no modelo de embedding e permissões `s3vectors:*` necessárias no índice (consulte a doc "Prerequisites for using a vector store" antes de escrever a policy).
-5. **KB** `type: VECTOR` com `embeddingModelArn` e `storageConfiguration` do tipo `S3_VECTORS` apontando para o ARN do índice (`arn:aws:s3vectors:REGIAO:CONTA:bucket/<nome>/index/<indice>`); depois `create-data-source` (tipo `S3`) e `start-ingestion-job`.
-6. A busca vetorial pura não tem reranker.
+Detalhes e a página de regiões: https://docs.aws.amazon.com/bedrock/latest/userguide/kb-managed-regions.html
 
 ---
 
@@ -717,7 +637,8 @@ Documentação AWS:
 - End User Messaging Social, pré-requisitos e número: https://docs.aws.amazon.com/end-user-messaging/latest/userguide/nx-whatsapp-gsu-prereqs.html, https://docs.aws.amazon.com/end-user-messaging/latest/userguide/nx-whatsapp-gsu-add-number.html
 - Mensagens recebidas (SNS padrão, sem FIFO, sem ordem garantida): https://docs.aws.amazon.com/end-user-messaging/latest/userguide/nx-whatsapp-send-inbound.html
 - Policy do tópico SNS para o serviço: https://docs.aws.amazon.com/social-messaging/latest/userguide/managing-event-destinations-add.html
-- KB gerenciado: https://docs.aws.amazon.com/bedrock/latest/userguide/kb-managed-create.html, https://docs.aws.amazon.com/bedrock/latest/userguide/kb-managed-prereqs.html, https://docs.aws.amazon.com/bedrock/latest/userguide/kb-managed-permissions.html
+- KB com S3 Vectors: https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-vectors-bedrock-kb.html, https://docs.aws.amazon.com/bedrock/latest/userguide/kb-permissions.html, https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-vectors-regions-quotas.html
+- KB gerenciado (regiões suportadas): https://docs.aws.amazon.com/bedrock/latest/userguide/kb-managed-regions.html
 - Guardrails: https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-supported-languages.html, https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-cross-region.html, https://docs.aws.amazon.com/bedrock/latest/userguide/guardrail-profiles-permissions.html
 - Prompt caching: https://docs.aws.amazon.com/bedrock/latest/userguide/prompt-caching.html
 - Acesso a modelos: https://docs.aws.amazon.com/bedrock/latest/userguide/model-access.html

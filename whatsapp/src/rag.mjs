@@ -1,4 +1,4 @@
-// RAG gerenciado: Retrieve no Knowledge Base + filtro por score (igual ao v8/v9).
+// RAG: Retrieve no Knowledge Base com S3 Vectors (busca vetorial) + filtro por score (igual ao v7).
 
 import { RetrieveCommand } from "@aws-sdk/client-bedrock-agent-runtime";
 import { bedrockKb } from "./clients.mjs";
@@ -9,11 +9,10 @@ export async function buscar(pergunta) {
     new RetrieveCommand({
       knowledgeBaseId: config.kbId,
       retrievalQuery: { text: pergunta },
+      // KB com S3 Vectors usa vectorSearchConfiguration. (managedSearchConfiguration
+      // é só para KB gerenciado, que não existe em us-east-2.) Não há reranker aqui.
       retrievalConfiguration: {
-        managedSearchConfiguration: {
-          numberOfResults: config.topK,
-          rerankingModelType: config.reranking,
-        },
+        vectorSearchConfiguration: { numberOfResults: config.topK },
       },
     })
   );

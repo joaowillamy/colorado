@@ -8,7 +8,7 @@ export AWS_PROFILE=seattle
 
 # Usar inference profile (cross-region) - prefixo "us."
 MODEL_ID="us.anthropic.claude-sonnet-4-5-20250929-v1:0"
-REGION=" us-east-2"
+REGION="us-east-2"
 
 # Ler system prompt de arquivo externo
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

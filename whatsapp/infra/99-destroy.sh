@@ -4,7 +4,7 @@
 set -euo pipefail
 source "$(dirname "$0")/env.sh"
 
-echo "Isto apaga: stack $STACK, guardrail, KB, role do KB e o bucket $BUCKET_DOCS."
+echo "Isto apaga: stack $STACK, guardrail, KB, vector bucket, role do KB e o bucket $BUCKET_DOCS."
 read -r -p "Digite o nome do stack para confirmar: " R
 [ "$R" = "$STACK" ] || { echo "Cancelado."; exit 1; }
 
@@ -14,7 +14,11 @@ if [ -n "${KB_ID:-}" ]; then
   [ -n "${DS_ID:-}" ] && aws bedrock-agent delete-data-source --knowledge-base-id "$KB_ID" --data-source-id "$DS_ID" || true
   aws bedrock-agent delete-knowledge-base --knowledge-base-id "$KB_ID" || true
 fi
-aws iam delete-role-policy --role-name "$KB_ROLE_NAME" --policy-name kb-s3-read 2>/dev/null || true
+for p in kb-s3-read kb-embed-model kb-s3-vectors; do
+  aws iam delete-role-policy --role-name "$KB_ROLE_NAME" --policy-name "$p" 2>/dev/null || true
+done
+aws s3vectors delete-index --vector-bucket-name "$VECTOR_BUCKET" --index-name "$VECTOR_INDEX" 2>/dev/null || true
+aws s3vectors delete-vector-bucket --vector-bucket-name "$VECTOR_BUCKET" 2>/dev/null || true
 aws iam delete-role --role-name "$KB_ROLE_NAME" 2>/dev/null || true
 aws s3 rb "s3://$BUCKET_DOCS" --force || true
 rm -f "$STATE_FILE"

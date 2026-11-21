@@ -5,7 +5,7 @@
   "type": "module",
   "main": "src/handler.mjs",
   "scripts": {
-    "test": "node test/parseEvent.test.mjs"
+    "test": "node test/parseEvent.test.mjs && node test/telefone.test.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-bedrock-agent-runtime": "^3.1108.0",

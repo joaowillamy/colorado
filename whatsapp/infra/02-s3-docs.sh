@@ -10,8 +10,8 @@ if aws s3api head-bucket --bucket "$BUCKET_DOCS" 2>/dev/null; then
   log "Bucket $BUCKET_DOCS já existe"
 else
   log "Criando bucket $BUCKET_DOCS"
-  # us-east-2 não aceita --create-bucket-configuration
-  if [ "$AWS_REGION" = " us-east-2" ]; then
+  # só us-east-1 não aceita --create-bucket-configuration
+  if [ "$AWS_REGION" = "us-east-1" ]; then
     aws s3api create-bucket --bucket "$BUCKET_DOCS"
   else
     aws s3api create-bucket --bucket "$BUCKET_DOCS" \

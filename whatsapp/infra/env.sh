@@ -7,7 +7,7 @@ export WHATSAPP_DIR="$(cd "$INFRA_DIR/.." && pwd)"
 export DOCS_DIR="${DOCS_DIR:-$(cd "$WHATSAPP_DIR/.." && pwd)/docs-rag-v2}"
 STATE_FILE="$INFRA_DIR/.state.env"
 
-export AWS_REGION="${AWS_REGION:- us-east-2}"
+export AWS_REGION="${AWS_REGION:-us-east-2}"
 export AWS_DEFAULT_REGION="$AWS_REGION"
 # export AWS_PROFILE=formacaoaws   # os scripts do curso usam este profile
 
@@ -18,6 +18,12 @@ export MODEL_ID="${MODEL_ID:-us.anthropic.claude-sonnet-4-6}"
 export ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
 export BUCKET_DOCS="${BUCKET_DOCS:-${PROJ}-docs-${ACCOUNT_ID}-${AWS_REGION}}"
 export KB_ROLE_NAME="${PROJ}-kb-role"
+
+# Knowledge Base com S3 Vectors (o KB gerenciado não existe em us-east-2)
+export VECTOR_BUCKET="${VECTOR_BUCKET:-${PROJ}-vectors-${ACCOUNT_ID}-${AWS_REGION}}"
+export VECTOR_INDEX="${VECTOR_INDEX:-docs-rag-v2}"
+export EMBED_MODEL_ID="${EMBED_MODEL_ID:-amazon.titan-embed-text-v2:0}"
+export EMBED_DIM="${EMBED_DIM:-1024}"
 
 # carrega o que os scripts anteriores gravaram (KB_ID, GUARDRAIL_ID, ...)
 # shellcheck disable=SC1090

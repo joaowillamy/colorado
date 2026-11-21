@@ -4,7 +4,7 @@
 const num = (v, padrao) => (v === undefined || v === "" ? padrao : Number(v));
 
 export const config = {
-  region: process.env.AWS_REGION ?? " us-east-2",
+  region: process.env.AWS_REGION ?? "us-east-2",
 
   // Bedrock
   modelId: process.env.MODEL_ID ?? "us.anthropic.claude-sonnet-4-6",
@@ -16,11 +16,11 @@ export const config = {
   guardrailId: process.env.GUARDRAIL_ID ?? "off",
   guardrailVersion: process.env.GUARDRAIL_VERSION ?? "DRAFT",
 
-  // Knowledge Base (RAG gerenciado)
+  // Knowledge Base (RAG com S3 Vectors)
   kbId: process.env.KB_ID,
   topK: num(process.env.TOP_K, 20),
-  reranking: process.env.RERANKING ?? "MANAGED",
-  scoreMinimo: num(process.env.SCORE_MINIMO, 0.5),
+  // Escala do S3 Vectors: o melhor trecho fica perto de 0.44 e "bom dia" perto de 0.36 (v7).
+  scoreMinimo: num(process.env.SCORE_MINIMO, 0.4),
 
   // DynamoDB (tabela única: conversas, mensagens processadas, alunos)
   tabela: process.env.TABELA,
