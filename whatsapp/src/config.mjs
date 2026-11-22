@@ -16,6 +16,11 @@ export const config = {
   guardrailId: process.env.GUARDRAIL_ID ?? "off",
   guardrailVersion: process.env.GUARDRAIL_VERSION ?? "DRAFT",
 
+  // Limite de perguntas do usuário. Com 8, a 9ª pergunta recebe a mensagem fixa
+  // (limite.mjs) em vez de ir para o Bedrock.
+  maxPerguntas: num(process.env.MAX_PERGUNTAS, 8),
+  linkPost: process.env.LINK_POST ?? "{LINK_POST}",
+
   // Knowledge Base (RAG com S3 Vectors)
   kbId: process.env.KB_ID,
   topK: num(process.env.TOP_K, 20),

@@ -23,6 +23,7 @@ import {
   ConversaOcupadaError,
 } from "./conversa.mjs";
 import { atender } from "./atendente.mjs";
+import { contarPerguntas, mensagemLimite, passouDoLimite } from "./limite.mjs";
 import { enviarTexto, marcarComoLida } from "./whatsapp.mjs";
 import { log } from "./log.mjs";
 
@@ -45,6 +46,16 @@ async function processar(msg) {
 
   const historico = await carregarComLock(msg.telefone);
   try {
+    // Passou do limite de perguntas: texto fixo, sem chamar o Bedrock.
+    // Não grava histórico (não cresce) e não renova o TTL.
+    if (passouDoLimite(historico)) {
+      log("limite_perguntas", { perguntas: contarPerguntas(historico) });
+      await enviarTexto(msg.phoneNumberId, msg.telefone, mensagemLimite());
+      await liberar(msg.telefone);
+      await marcarProcessada(msg.messageId);
+      return;
+    }
+
     const { resposta, messages } = await atender({
       texto: msg.texto,
       nome: msg.nome,
