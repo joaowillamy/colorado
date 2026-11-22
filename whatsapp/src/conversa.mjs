@@ -3,6 +3,7 @@
 //   pk = CONVERSA#<telefone>   { messages, lockUntil, ttl }
 //   pk = MSG#<wamid>           { ttl }            -> idempotência
 //   pk = ALUNO#<email>         { nome, ingresso, status, pedido, ... }
+//   pk = BLOQUEADO#<telefone>  { bloqueadoEm }    -> passou do limite, SEM ttl (permanente)
 //
 // O `ttl` é o atributo de Time To Live da tabela: o DynamoDB apaga sozinho.
 
@@ -32,6 +33,29 @@ export async function marcarProcessada(messageId) {
     new PutCommand({
       TableName: config.tabela,
       Item: { pk: `MSG#${messageId}`, ttl: agora() + config.ttlMensagemSeg },
+    })
+  );
+}
+
+// ── bloqueio permanente (limite de perguntas) ─────────────────────────────
+// Item próprio e sem ttl: sobrevive à expiração do histórico (24h). Como é um
+// GetItem por chave, quem já foi bloqueado não precisa de lock nem de histórico.
+export async function jaFoiBloqueado(telefone) {
+  const r = await dynamo.send(
+    new GetCommand({
+      TableName: config.tabela,
+      Key: { pk: `BLOQUEADO#${telefone}` },
+      ConsistentRead: true,
+    })
+  );
+  return Boolean(r.Item);
+}
+
+export async function bloquear(telefone) {
+  await dynamo.send(
+    new PutCommand({
+      TableName: config.tabela,
+      Item: { pk: `BLOQUEADO#${telefone}`, bloqueadoEm: new Date().toISOString() },
     })
   );
 }

@@ -17,7 +17,7 @@ import { log } from "./log.mjs";
 
 // Lido uma vez por cold start (fica no escopo do módulo).
 const dir = dirname(fileURLToPath(import.meta.url));
-const systemPrompt = readFileSync(join(dir, "..", "prompt.txt"), "utf-8");
+const systemPrompt = readFileSync(join(dir, "..", "prompt.txt"), "utf-8").replaceAll("{LINK_POST}", config.linkPost);
 
 const textoDe = (message) =>
   (message?.content ?? [])
@@ -59,7 +59,7 @@ export async function atender({ texto, nome, messages }) {
         modelId: config.modelId,
         system,
         messages: comContexto(historico),
-        toolConfig,
+        // toolConfig,
         inferenceConfig: { maxTokens: config.maxTokens, temperature: config.temperature },
         guardrailConfig,
       })

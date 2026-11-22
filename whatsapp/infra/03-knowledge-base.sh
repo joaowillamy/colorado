@@ -131,13 +131,13 @@ done
 aws bedrock-agent get-ingestion-job --knowledge-base-id "$KB_ID" --data-source-id "$DS_ID" \
   --ingestion-job-id "$JOB" --query 'ingestionJob.statistics'
 
-# ── Verificação: o documento do VIP precisa aparecer ──────────────────────
+# ── Verificação: o documento do fluxo precisa aparecer ──────────────────────
 log "Retrieve de teste"
 OUT=$(aws bedrock-agent-runtime retrieve --knowledge-base-id "$KB_ID" \
-  --retrieval-query '{"text":"Quanto custa o ingresso VIP?"}' \
+  --retrieval-query '{"text":"Como você foi construída? Qual o fluxo de uma mensagem?"}' \
   --retrieval-configuration '{"vectorSearchConfiguration":{"numberOfResults":5}}' \
   --query 'retrievalResults[].{score:score,fonte:location.s3Location.uri}' --output json)
 echo "$OUT"
-echo "$OUT" | grep -q "ingresso-vip-preco-e-inclusos" \
-  || { echo "ERRO: documento do VIP não apareceu no top 5" >&2; exit 1; }
+echo "$OUT" | grep -q "01-visao-geral-e-fluxo" \
+  || { echo "ERRO: documento do fluxo não apareceu no top 5" >&2; exit 1; }
 log "OK: bloco 3 concluído"

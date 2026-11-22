@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { detectarIdioma } from "../src/idioma.mjs";
 import { contarPerguntas, passouDoLimite, mensagemLimite, MSG_DEFAULT_MAX_MSGS } from "../src/limite.mjs";
 
 const user = (t) => ({ role: "user", content: [{ text: t }] });
@@ -17,6 +18,19 @@ assert.equal(contarPerguntas([user("a"), toolUse, toolResult, ia("b")]), 1);
 assert.equal(passouDoLimite(hist(7), 8), false);
 assert.equal(passouDoLimite(hist(8), 8), true); // a 9ª pergunta já é bloqueada
 
-assert.equal(mensagemLimite("https://lnkd.in/x"), MSG_DEFAULT_MAX_MSGS.replace("{LINK_POST}", "https://lnkd.in/x"));
-assert.ok(!mensagemLimite("https://lnkd.in/x").includes("{LINK_POST}"));
+assert.equal(mensagemLimite("oi", "https://lnkd.in/x"), MSG_DEFAULT_MAX_MSGS.replace("{LINK_POST}", "https://lnkd.in/x"));
+assert.ok(!mensagemLimite("oi", "https://lnkd.in/x").includes("{LINK_POST}"));
+assert.ok(MSG_DEFAULT_MAX_MSGS.includes("diagrama animado"));
+assert.ok(MSG_DEFAULT_MAX_MSGS.includes("exemplos"));
+
+// idioma
+assert.equal(detectarIdioma("What is the cost of this?"), "en");
+assert.equal(detectarIdioma("how do you work"), "en");
+assert.equal(detectarIdioma("Quero saber como você funciona"), "pt");
+assert.equal(detectarIdioma("ok"), "pt");
+assert.equal(detectarIdioma(""), "pt");
+assert.equal(detectarIdioma(undefined), "pt");
+assert.ok(mensagemLimite("what is this", "https://lnkd.in/x").startsWith("You can head over"));
+assert.ok(mensagemLimite("o que é isso", "https://lnkd.in/x").startsWith("Já dá"));
+assert.ok(!mensagemLimite("hello you", "https://lnkd.in/x").includes("{LINK_POST}"));
 console.log("ok: limite");

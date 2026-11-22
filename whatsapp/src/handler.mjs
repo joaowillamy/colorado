@@ -15,7 +15,9 @@
 
 import { extrairMensagens } from "./parseEvent.mjs";
 import {
+  bloquear,
   carregarComLock,
+  jaFoiBloqueado,
   jaProcessada,
   liberar,
   marcarProcessada,
@@ -29,6 +31,12 @@ import { log } from "./log.mjs";
 
 const RESPOSTA_NAO_TEXTO = "Por enquanto eu só entendo mensagens de texto. Pode escrever sua dúvida?";
 
+// Mensagem fixa do limite: sem RAG, sem Bedrock, sem histórico (nenhum token gasto).
+async function responderLimite(msg) {
+  await enviarTexto(msg.phoneNumberId, msg.telefone, mensagemLimite(msg.texto));
+  await marcarProcessada(msg.messageId);
+}
+
 async function processar(msg) {
   if (await jaProcessada(msg.messageId)) {
     log("duplicada_ignorada");
@@ -36,6 +44,13 @@ async function processar(msg) {
   }
 
   await marcarComoLida(msg.phoneNumberId, msg.messageId);
+
+  // Já bloqueado antes: um GetItem por chave resolve, sem lock e sem ler o histórico.
+  if (await jaFoiBloqueado(msg.telefone)) {
+    log("bloqueado_ignorado");
+    await responderLimite(msg);
+    return;
+  }
 
   // Áudio, imagem etc.: resposta fixa, sem chamar o modelo (não gasta token).
   if (msg.tipo !== "text" || !msg.texto?.trim()) {
@@ -46,13 +61,14 @@ async function processar(msg) {
 
   const historico = await carregarComLock(msg.telefone);
   try {
-    // Passou do limite de perguntas: texto fixo, sem chamar o Bedrock.
-    // Não grava histórico (não cresce) e não renova o TTL.
+    // Passou do limite agora: bloqueia para sempre e responde a mensagem fixa.
+    // O bloqueio vem antes do envio: se o envio falhar, o retry cai no
+    // jaFoiBloqueado acima e reenvia a mensagem fixa.
     if (passouDoLimite(historico)) {
       log("limite_perguntas", { perguntas: contarPerguntas(historico) });
-      await enviarTexto(msg.phoneNumberId, msg.telefone, mensagemLimite());
+      await bloquear(msg.telefone);
       await liberar(msg.telefone);
-      await marcarProcessada(msg.messageId);
+      await responderLimite(msg);
       return;
     }
 
