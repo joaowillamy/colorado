@@ -1,0 +1,200 @@
+<style>
+  .files{display:grid;grid-template-columns:repeat(4,1fr);gap:8px} @media (max-width:820px){.files{grid-template-columns:1fr 1fr}}
+  .file{border:1px solid var(--line);border-radius:10px;padding:9px 11px;background:var(--surface);cursor:pointer;text-align:left;transition:all .2s}
+  .file b{font-family:var(--mono);font-size:13px;display:block} .file span{font-size:12px;color:var(--muted)}
+  .file.on{border-color:var(--accent);background:var(--accent-bg)} .file.dep{border-color:var(--info);background:var(--info-bg)} .file.user{border-color:var(--ok);background:var(--ok-bg)}
+  .layer{border:2px solid var(--line);border-radius:12px;padding:10px 12px;margin:6px 0 0;transition:all .35s;background:var(--surface)}
+  .layer>.lh{display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:13px}
+  .layer pre{margin:6px 0 0;max-height:190px}
+  .layer.l0{border-color:#8b5cf6}.layer.l1{border-color:#0ea5e9}.layer.l2{border-color:#f59e0b}.layer.l3{border-color:#10b981}.layer.l4{border-color:var(--accent)}
+  .msgq{display:flex;gap:8px;flex-wrap:wrap;min-height:70px;align-items:flex-start}
+  .mc{border:1.5px solid var(--line);border-radius:10px;padding:7px 9px;font-size:12px;background:var(--surface);min-width:118px;transition:all .35s;position:relative}
+  .mc .ph{font-family:var(--mono);font-weight:700}
+  .mc select{font-size:11px;margin-top:4px;width:100%;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:6px}
+  .mc.run{border-color:var(--warn);background:var(--warn-bg);transform:translateY(-3px)}
+  .mc.ok{border-color:var(--ok);background:var(--ok-bg)} .mc.fail{border-color:var(--bad);background:var(--bad-bg)} .mc.skip{border-color:var(--muted);opacity:.6} .mc.drop{opacity:.35;text-decoration:line-through}
+  .pa{border-left:4px solid #0ea5e9} .pb{border-left:4px solid #e11d48}
+  .lane{display:grid;grid-template-columns:110px 1fr;gap:8px;align-items:center;margin:6px 0}
+  .lane .track{position:relative;height:36px;background:var(--bg);border:1px solid var(--line-soft);border-radius:8px}
+  .tok{position:absolute;top:4px;height:26px;border-radius:6px;padding:0 8px;font-size:11.5px;line-height:26px;white-space:nowrap;transition:left .6s,opacity .3s;font-family:var(--mono)}
+  .ddb{font-family:var(--mono);font-size:12.5px;background:var(--code-bg);color:var(--code-ink);border-radius:10px;padding:10px 12px;min-height:60px}
+  .ddb .chg{color:#F5B841}
+  .crash{display:flex;flex-direction:column;gap:5px}
+  .cstep{display:grid;grid-template-columns:26px 1fr auto;gap:8px;align-items:center;border:1px solid var(--line);border-radius:9px;padding:6px 10px;background:var(--surface);font-size:13.5px}
+  .cstep .k{font-family:var(--mono);color:var(--muted)} .cstep.done{background:var(--ok-bg);border-color:var(--ok)} .cstep.dead{background:var(--bad-bg);border-color:var(--bad)} .cstep.never{opacity:.4}
+  .hist{display:flex;gap:5px;flex-wrap:wrap;margin:8px 0}
+  .hm{font-family:var(--mono);font-size:11px;border-radius:7px;padding:5px 7px;border:1.5px solid var(--line);transition:all .3s}
+  .hm.u{border-color:#0ea5e9}.hm.a{border-color:#a855f7}.hm.tr{border-color:#f59e0b}.hm.tu{border-color:#ec4899}
+  .hm.cut{opacity:.25;transform:scale(.9)} .hm.bad{background:var(--bad-bg)} .hm.first{outline:2px solid var(--ok);outline-offset:1px}
+  .conv{display:flex;flex-direction:column;gap:6px;max-height:420px;overflow:auto}
+  .bub{border-radius:10px;padding:8px 11px;font-size:13px;border:1px solid var(--line);animation:fadein .35s}
+  .bub .who{font-family:var(--mono);font-size:11px;color:var(--muted);display:block;margin-bottom:2px}
+  .bub.user{background:var(--info-bg)} .bub.asst{background:var(--surface)} .bub.tool{background:var(--warn-bg)} .bub.aug{background:var(--accent-bg);border-style:dashed}
+  .bub pre{margin:4px 0 0;font-size:11.5px;padding:8px}
+  .cache{display:flex;height:46px;border-radius:9px;overflow:hidden;border:1px solid var(--line);font-size:12px;font-family:var(--mono)}
+  .cache div{display:flex;align-items:center;justify-content:center;transition:all .4s;text-align:center;padding:0 6px}
+  .scorebar{display:flex;flex-direction:column;gap:4px}
+  .sb{display:grid;grid-template-columns:52px 1fr 220px;gap:8px;align-items:center;font-size:12.5px}
+  .sb .bar{height:14px;border-radius:4px;background:var(--line-soft);overflow:hidden} .sb .bar i{display:block;height:100%;background:var(--ok);transition:all .3s}
+  .sb.out{opacity:.35} .sb.out .bar i{background:var(--muted)}
+  input[type=range]{width:100%;accent-color:var(--accent)}
+  .seq{display:grid;grid-template-columns:repeat(3,1fr);gap:0;position:relative;margin-top:8px}
+  .seq .hd{text-align:center;font-weight:700;font-size:13px;padding:6px;border-bottom:2px solid var(--line)}
+  .seqmsg{grid-column:1/4;position:relative;height:40px}
+  .seqmsg .lbl{position:absolute;top:2px;font-size:11.5px;font-family:var(--mono);white-space:nowrap;transform:translateX(-50%)}
+  .seqmsg .ln2{position:absolute;top:24px;height:2px;background:var(--accent)}
+  .seqmsg .ln2::after{content:"";position:absolute;top:-4px;border:5px solid transparent}
+  .seqmsg.r .ln2::after{right:-6px;border-left-color:var(--accent)} .seqmsg.l .ln2::after{left:-6px;border-right-color:var(--accent)}
+  .seqmsg{opacity:0;transition:opacity .4s} .seqmsg.show{opacity:1}
+</style>
+
+<header class="top">
+  <div>
+    <div class="eyebrow">Projeto whatsapp/src · Node.js na Lambda</div>
+    <h1>O código do atendente, por dentro</h1>
+    <p class="lead">Foco no que não é óbvio: as camadas do evento, o lote do SQS, o lock no DynamoDB, o loop de tools do Converse e o que acontece quando algo quebra no meio. Os trechos de código abaixo são os arquivos reais de <code>whatsapp/src</code>.</p>
+  </div>
+  <button class="btn" id="theme">◐ tema</button>
+</header>
+
+<section class="card" id="s1">
+  <h2><span class="num">01</span>Mapa: quem faz o quê e quem importa quem</h2>
+  <p>Analogia de cozinha de restaurante: o <code>handler</code> é o gerente do turno, o <code>parseEvent</code> abre os envelopes dos pedidos, o <code>conversa</code> é o caderno de comandas com cadeado, o <code>atendente</code> é o chef, o <code>rag</code> é o livro de receitas, as <code>tools</code> são os ajudantes que consultam o caixa, o <code>guardrail</code> é o fiscal da vigilância e o <code>whatsapp</code> é o garçom.</p>
+  <p class="hint">Clique num arquivo: em azul o que ele importa, em verde quem importa ele.</p>
+  <div class="files" id="files"></div>
+  <div class="grid2" style="margin-top:12px"><div class="panel" id="file-out"></div><div class="code" id="file-code" style="max-height:360px"></div></div>
+</section>
+
+<section class="card" id="s2">
+  <h2><span class="num">02</span>Cold start: o que roda uma vez e o que roda sempre</h2>
+  <p>O que está no <b>escopo do módulo</b> (fora do <code>handler</code>) roda só quando a Lambda cria um ambiente novo. Depois, o mesmo ambiente atende várias invocações e reaproveita esses objetos: clients do SDK com conexões HTTP abertas, o <code>prompt.txt</code> já lido, o <code>config</code>.</p>
+  <div class="row"><button class="btn primary" id="cs-run">▶ Simular 3 invocações</button></div>
+  <div id="cs-lanes" style="margin-top:10px"></div>
+  <div class="note info"><b>Consequência prática</b>Mudar o <code>prompt.txt</code> sem deploy não muda nada: ele foi lido no cold start. E o deploy força ambientes novos, por isso o prompt novo vale já na próxima mensagem.</div>
+</section>
+
+<section class="card" id="s3">
+  <h2><span class="num">03</span>parseEvent: a boneca russa</h2>
+  <p>A mensagem do cliente chega <b>embrulhada três vezes</b>, e duas das camadas são <b>strings JSON dentro de JSON</b>. Por isso há três <code>JSON.parse</code>. Abra camada por camada usando o evento real de <code>events/sqs-sns-mensagem.json</code>.</p>
+  <div class="row"><button class="btn primary" id="un-next">Abrir a próxima camada ▸</button><button class="btn" id="un-reset">↺ Fechar tudo</button><span class="hint" id="un-pos"></span></div>
+  <div id="layers"></div>
+  <div class="grid2" style="margin-top:12px">
+    <div class="panel" id="un-why">Comece pela camada de fora: o record que o SQS entrega para a Lambda.</div>
+    <div class="code" id="un-code" style="max-height:300px"></div>
+  </div>
+</section>
+
+<section class="card" id="s4">
+  <h2><span class="num">04</span>handler: o lote do SQS e o batchItemFailures</h2>
+  <p>A Lambda recebe até 5 records por vez. O handler achata as mensagens, <b>ordena por timestamp</b> (o SNS padrão não garante ordem) e processa uma por vez. No fim, devolve só os <code>messageId</code> do SQS que falharam: esses voltam para a fila, e o resto é apagado.</p>
+  <p class="hint">Monte o lote: escolha o que acontece com cada mensagem e rode. Telefone <b style="color:#0ea5e9">A</b> e <b style="color:#e11d48">B</b>. Os timestamps estão fora de ordem de propósito.</p>
+  <div class="msgq" id="batch"></div>
+  <div class="row" style="margin-top:10px"><button class="btn primary" id="b-run">▶ Processar o lote</button><button class="btn" id="b-reset">↺ Recomeçar</button></div>
+  <div class="grid2" style="margin-top:10px">
+    <div><div class="hint">Log do handler</div><div class="events" id="b-log" style="height:200px"></div></div>
+    <div><div class="hint">Retorno da Lambda</div><pre class="plain" id="b-ret" style="min-height:120px">{ "batchItemFailures": [] }</pre><div class="panel" id="b-why" style="font-size:14px"></div></div>
+  </div>
+</section>
+
+<section class="card" id="s5">
+  <h2><span class="num">05</span>processar(): e se a Lambda morrer no meio?</h2>
+  <p>A ordem dos passos dentro de <code>processar()</code> foi escolhida para que falhar seja seguro na maioria dos casos. Clique em <b>💥</b> num passo para matar a Lambda ali e ver a consequência, incluindo o estado do DynamoDB e o que acontece no retry.</p>
+  <div class="grid2">
+    <div class="crash" id="crash"></div>
+    <div><div class="hint">DynamoDB depois da morte</div><div class="ddb" id="cr-ddb"></div><div class="panel" id="cr-out" style="margin-top:8px">Escolha um ponto de falha.</div></div>
+  </div>
+</section>
+
+<section class="card" id="s6">
+  <h2><span class="num">06</span>O lock por telefone: duas Lambdas, uma conversa</h2>
+  <p>O SQS padrão pode entregar duas mensagens do mesmo cliente para duas Lambdas ao mesmo tempo. Sem cuidado, as duas leem o histórico, respondem e gravam, e a última gravação apaga a outra (<i>lost update</i>). O <code>carregarComLock</code> resolve com <b>um único UpdateItem condicional</b>: pega o lock e lê o histórico na mesma operação atômica.</p>
+  <pre class="plain" id="lock-expr"></pre>
+  <div class="row"><button class="btn primary" id="lk-run">▶ Corrida normal</button><button class="btn" id="lk-crash">💥 A morre segurando o lock</button><span class="clock" id="lk-clock"></span></div>
+  <div class="lane"><b style="color:#0ea5e9">Lambda A</b><div class="track" id="lk-a"></div></div>
+  <div class="lane"><b style="color:#e11d48">Lambda B</b><div class="track" id="lk-b"></div></div>
+  <div class="grid2" style="margin-top:8px"><div class="ddb" id="lk-ddb"></div><div class="panel" id="lk-out">Aperte play.</div></div>
+</section>
+
+<section class="card" id="s7">
+  <h2><span class="num">07</span>Histórico: guardar, cortar e não quebrar o Converse</h2>
+  <p>O histórico é o array <code>messages</code> do Converse, salvo como <b>string JSON</b> num atributo do item. Assim o DynamoDB não tenta mapear cada bloco aninhado (toolUse, toolResult) para os tipos dele. O <code>aparar()</code> mantém as últimas N mensagens, mas existe uma regra: <b>o histórico tem de começar numa mensagem do usuário com texto</b>. Começar num <code>toolResult</code> sem o <code>toolUse</code> que o pediu dá <code>ValidationException</code>.</p>
+  <div class="row"><span>N = <b id="ap-n">6</b></span><input type="range" id="ap-r" min="2" max="12" value="6" style="max-width:320px"></div>
+  <div class="hist" id="ap-hist"></div>
+  <div class="legend"><span><i style="border-color:#0ea5e9"></i>user (texto)</span><span><i style="border-color:#a855f7"></i>assistant (texto)</span><span><i style="border-color:#ec4899"></i>assistant (toolUse)</span><span><i style="border-color:#f59e0b"></i>user (toolResult)</span></div>
+  <div class="panel" id="ap-out" style="margin-top:8px"></div>
+</section>
+
+<section class="card" id="s8">
+  <h2><span class="num">08</span>atendente: o loop de tools, turno a turno</h2>
+  <p>A parte mais densa do projeto. Duas ideias guiam tudo: <b>(1)</b> o modelo não executa nada, ele só <i>pede</i> uma tool, e o seu código executa e devolve o resultado; <b>(2)</b> o que vai para o Bedrock é diferente do que fica salvo: o contexto do RAG entra só na requisição, por meio do <code>comContexto()</code>.</p>
+  <div class="row"><span class="hint">Cenário:</span><button class="btn on" data-sc="pay">"Quero o VIP, meu e-mail é joao@email.com"</button><button class="btn" data-sc="simple">"Quanto custa o VIP?"</button><button class="btn" data-sc="block">"meu cartão é 4111 1111 1111 1111"</button></div>
+  <div class="row" style="margin-top:8px"><button class="btn" id="at-prev">← Voltar</button><button class="btn primary" id="at-next">Próximo passo →</button><span class="hint" id="at-pos"></span></div>
+  <div class="panel" id="at-why" style="margin-top:10px"></div>
+  <div class="grid2" style="margin-top:10px">
+    <div><div class="hint">O que vai para o Bedrock nesta chamada</div><div class="conv" id="at-req"></div></div>
+    <div><div class="hint"><code>historico</code> em memória (o que será salvo)</div><div class="conv" id="at-hist"></div></div>
+  </div>
+</section>
+
+<section class="card" id="s9">
+  <h2><span class="num">09</span>cachePoint: por que o nome do cliente vem depois</h2>
+  <p>O cache do Claude guarda um <b>prefixo</b> da requisição. Tudo antes do <code>cachePoint</code> precisa ser idêntico entre chamadas para dar <i>hit</i>. Se o nome do cliente viesse antes, cada cliente teria um cache próprio, e o prompt de ~3 mil tokens seria regravado a cada pessoa nova.</p>
+  <div class="row"><button class="btn on" data-cp="right">Como está no código</button><button class="btn" data-cp="wrong">Se o nome viesse antes</button></div>
+  <div style="margin-top:10px"><div class="hint">Diego (1ª chamada)</div><div class="cache" id="cp-1"></div><div class="hint" style="margin-top:8px">Maria (minutos depois)</div><div class="cache" id="cp-2"></div></div>
+  <div class="panel" id="cp-out" style="margin-top:10px"></div>
+  <div class="note">Nos logs reais do seu atendente: <code>{"input":4665,"cacheRead":3121,"cacheWrite":0}</code>. O <code>inputTokens</code> do Converse <b>não inclui</b> os tokens lidos do cache: o total de entrada é 4665 + 3121.</div>
+</section>
+
+<section class="card" id="s10">
+  <h2><span class="num">10</span>rag: buscar, filtrar por score, montar a mensagem</h2>
+  <p>O <code>buscar()</code> chama o <code>Retrieve</code> do Knowledge Base e o filtro descarta trechos com score abaixo de <code>SCORE_MINIMO</code>. Mexa no corte e veja o custo. Os 5 primeiros scores são reais (pergunta "Quanto custa o ingresso VIP?"); os demais são ilustrativos.</p>
+  <div class="row"><span>SCORE_MINIMO = <b id="rg-v">0.40</b></span><input type="range" id="rg-r" min="0" max="80" value="40" style="max-width:340px"></div>
+  <div class="scorebar" id="rg-bars" style="margin-top:8px"></div>
+  <div class="panel" id="rg-out" style="margin-top:10px"></div>
+</section>
+
+<section class="card" id="s11">
+  <h2><span class="num">11</span>tools: o contrato toolUse → toolResult</h2>
+  <p>O <code>toolConfig</code> descreve as tools com JSON Schema. A <b>descrição</b> é instrução para o modelo: a regra "consulte a matrícula antes de gerar link" está escrita lá, não no código. O código só faz o despacho pelo mapa <code>EXECUTORES[name]</code> e devolve o resultado com o mesmo <code>toolUseId</code>.</p>
+  <div class="row"><button class="btn primary" id="sq-run">▶ Animar uma chamada de tool</button></div>
+  <div class="seq" id="seq"><div class="hd">atendente.mjs</div><div class="hd">Bedrock (Claude)</div><div class="hd">tools.mjs → DynamoDB</div></div>
+  <div class="panel" id="sq-out" style="margin-top:10px">Aperte play.</div>
+</section>
+
+<section class="card" id="s12">
+  <h2><span class="num">12</span>guardrail: config condicional e o trace achatado</h2>
+  <p><b>Truque 1.</b> <code>guardrailConfig</code> é <code>undefined</code> quando <code>GUARDRAIL_ID=off</code>. O SDK omite campos <code>undefined</code> ao serializar, então a requisição sai sem guardrail e nenhum <code>if</code> é preciso no <code>ConverseCommand</code>.</p>
+  <p><b>Truque 2.</b> O trace tem formatos diferentes de cada lado: <code>inputAssessment</code> é um objeto <i>{ idDoGuardrail: avaliação }</i>, e <code>outputAssessments</code> é <i>{ idDoGuardrail: [avaliações] }</i>. O <code>Object.values(mapa).flat()</code> normaliza os dois numa lista só.</p>
+  <div class="row"><button class="btn primary" id="gr-run">▶ Achatar o trace</button></div>
+  <div class="grid2" style="margin-top:8px"><pre class="plain" id="gr-in" style="max-height:330px"></pre><div><pre class="plain" id="gr-mid"></pre><pre class="plain" id="gr-outp"></pre></div></div>
+  <div class="note bad"><b>Por que o log não leva o <code>match</code></b>O trace traz o valor detectado em texto puro (o número do cartão, o e-mail). O <code>achadosDoGuardrail</code> loga só tipo e ação, de propósito. A documentação da AWS pede para tratar o trace como dado sensível.</div>
+</section>
+
+<section class="card" id="s13">
+  <h2><span class="num">13</span>whatsapp: bytes, "+" e o "marcar como lida"</h2>
+  <div class="grid2">
+    <div>
+      <p><b>O campo <code>message</code> é um blob.</b> Ele recebe o JSON da Cloud API da Meta, como bytes (<code>TextEncoder</code>). O End User Messaging repassa para a Meta.</p>
+      <p><b>O "+" que custou um debug.</b> O webhook entrega o número sem <code>+</code>, e o <code>SendWhatsAppMessage</code> recusava com <code>Invalid destination phone number or message Id</code>. O <code>normalizarTelefone</code> resolve.</p>
+      <p><b>Marcar como lida é best effort.</b> <code>.catch(() =&gt; {})</code>: os tracinhos azuis não valem um retry da mensagem inteira.</p>
+    </div>
+    <div class="code" id="wa-code" style="max-height:360px"></div>
+  </div>
+  <h3>Por que o <code>log()</code> é tão pobre</h3>
+  <p>Ele só aceita um nome de evento e alguns números. Telefone, e-mail e texto do cliente nunca entram, e por isso nem o <code>input</code> das tools é logado. É mais fácil não vazar do que limpar depois.</p>
+</section>
+
+<section class="card" id="s14">
+  <h2><span class="num">14</span>Teste você</h2>
+  <p class="hint"><span class="score" id="score"></span></p>
+  <div id="quiz"></div>
+  <h3>Fontes</h3>
+  <ul class="hint" style="line-height:1.9">
+    <li><a href="https://docs.aws.amazon.com/lambda/latest/dg/services-sqs-errorhandling.html">Lambda + SQS: partial batch response (batchItemFailures)</a></li>
+    <li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/prompt-caching.html">Bedrock prompt caching (cache checkpoints)</a></li>
+    <li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-use-converse-api.html">Guardrails com Converse API (stopReason, trace)</a></li>
+    <li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/tool-use.html">Tool use com Converse API</a></li>
+    <li><a href="https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Expressions.ConditionExpressions.html">DynamoDB: condition expressions</a></li>
+    <li><a href="https://docs.aws.amazon.com/social-messaging/latest/APIReference/API_SendWhatsAppMessage.html">SendWhatsAppMessage</a></li>
+  </ul>
+</section>

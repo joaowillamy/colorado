@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WhatsApp virtual agent with Bedrock</title>
+<style>
+  :root { --bg:#F1F0EC; --surface:#fff; --ink:#15171B; --muted:#6E6C63; --line:#D6D4CC; --line-soft:#E4E2DB;
+    --accent:#B45309; --accent-ink:#8A3D06; --accent-bg:#FDF3E0; --ok:#15803D; --ok-bg:#E3F4E8; --bad:#B91C1C; --bad-bg:#FBE7E7;
+    --code-bg:#17191E; --code-ink:#E6E4DC; --shadow:0 1px 2px rgba(20,22,26,.06),0 8px 24px -16px rgba(20,22,26,.24);
+    --sans:ui-sans-serif,system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif; --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
+  @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){ --bg:#0C0E12; --surface:#14181E; --ink:#ECEBE5; --muted:#918F86; --line:#272C34; --line-soft:#1D222A;
+    --accent:#F5B841; --accent-ink:#F7C766; --accent-bg:#241C0C; --ok:#5AD08A; --ok-bg:#0F2418; --bad:#F27B7B; --bad-bg:#2A1212; --code-bg:#0A0C10; } }
+  :root[data-theme="dark"]{ --bg:#0C0E12; --surface:#14181E; --ink:#ECEBE5; --muted:#918F86; --line:#272C34; --line-soft:#1D222A;
+    --accent:#F5B841; --accent-ink:#F7C766; --accent-bg:#241C0C; --ok:#5AD08A; --ok-bg:#0F2418; --bad:#F27B7B; --bad-bg:#2A1212; --code-bg:#0A0C10; }
+  *{box-sizing:border-box}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.6;margin:0;padding:clamp(20px,5vw,56px) clamp(16px,4vw,40px) 80px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;display:flex;flex-direction:column;gap:32px}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)}
+  h1{font-size:clamp(26px,4vw,38px);line-height:1.15;margin:6px 0 10px}
+  h2{font-size:22px;margin:0 0 4px} h3{font-size:16px;margin:14px 0 4px}
+  p{margin:0 0 10px} .lead{color:var(--muted);max-width:68ch;font-size:17px} .hint{color:var(--muted);font-size:13px}
+  code{font-family:var(--mono);font-size:.88em;background:var(--accent-bg);color:var(--accent-ink);padding:1px 6px;border-radius:5px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:22px}
+  button{font:inherit;cursor:pointer;color:var(--ink)}
+  .btn{background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:8px 14px}
+  .btn:hover{border-color:var(--accent)} .btn:disabled{opacity:.4;cursor:default}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  :root[data-theme="dark"] .btn.primary{color:#15171B}
+  button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .top{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}
+
+  /* service map */
+  .map{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:14px 0 18px}
+  .svc{flex:1 1 110px;min-width:96px;text-align:center;border:1.5px solid var(--line);background:var(--surface);border-radius:12px;padding:10px 6px;font-size:13px;transition:.2s;cursor:pointer}
+  .svc b{display:block;font-size:13px} .svc span{color:var(--muted);font-size:11px}
+  .svc.on{border-color:var(--accent);background:var(--accent-bg);transform:translateY(-3px);box-shadow:var(--shadow)}
+  .svc.past{border-color:var(--accent);opacity:.75}
+  .arr{color:var(--muted);font-size:14px}
+  .stepbar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+  .dot{width:32px;height:32px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-family:var(--mono)}
+  .dot.on{background:var(--accent);border-color:var(--accent);color:#fff} :root[data-theme="dark"] .dot.on{color:#15171B}
+  .dot.done{border-color:var(--accent);color:var(--accent)}
+  .grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+  @media(max-width:820px){.grid2{grid-template-columns:1fr}}
+  .tag{display:inline-block;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;background:var(--accent-bg);color:var(--accent-ink);border-radius:6px;padding:2px 8px;margin-bottom:6px}
+  pre{background:var(--code-bg);color:var(--code-ink);border-radius:10px;padding:12px;font-family:var(--mono);font-size:12.5px;line-height:1.5;overflow:auto;margin:0;white-space:pre-wrap}
+  .why{border-left:3px solid var(--accent);background:var(--accent-bg);padding:9px 13px;border-radius:0 10px 10px 0;font-size:14px;margin:10px 0}
+  .file{font-family:var(--mono);font-size:12px;color:var(--muted)}
+  .nav{display:flex;gap:8px;margin-top:14px;align-items:center;flex-wrap:wrap}
+
+  /* pillars */
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--line);margin:12px 0 16px}
+  .tab{border:0;background:none;color:var(--muted);padding:10px 14px;border-bottom:2px solid transparent}
+  .tab.on{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
+  .panel{display:none}.panel.on{display:block}
+  .sw{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;margin-bottom:12px}
+  .sw button{border:0;background:var(--surface);padding:6px 16px;color:var(--muted)}
+  .sw button.on{background:var(--accent);color:#fff} :root[data-theme="dark"] .sw button.on{color:#15171B}
+  .bubble{border-radius:12px;padding:10px 13px;font-size:14px;margin:6px 0;max-width:90%}
+  .bubble.u{background:var(--line-soft)} .bubble.b{background:var(--ok-bg);border:1px solid var(--ok)}
+  .bubble.x{background:var(--bad-bg);border:1px solid var(--bad)}
+  .bubble small{display:block;color:var(--muted);font-family:var(--mono);font-size:11px;margin-bottom:2px}
+  .meter{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+  .meter div{background:var(--accent-bg);border-radius:10px;padding:8px 12px;font-size:12px;color:var(--muted)}
+  .meter b{display:block;font-family:var(--mono);font-size:16px;color:var(--accent-ink)}
+
+  /* failures */
+  .fails{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+  .chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 14px;font-size:14px}
+  .chip.on{background:var(--accent);border-color:var(--accent);color:#fff} :root[data-theme="dark"] .chip.on{color:#15171B}
+  table{width:100%;border-collapse:collapse;font-size:14px} th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+  th{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  footer{color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="top">
+    <div>
+      <div class="eyebrow">whatsapp/ project · Amazon Bedrock</div>
+      <h1>WhatsApp virtual agent</h1>
+      <p class="lead">A customer sends a message, and an AI answers based on your documents, looks up real data, and does not leak sensitive information. AWS services chained through a queue, with no servers to maintain.</p>
+    </div>
+    <button class="btn" id="theme">◐ theme</button>
+  </div>
+</header>
+
+<section class="card" id="journey">
+  <h2>The journey of a message</h2>
+  <p class="hint">Example: Diego writes "How much is the VIP ticket?". Move forward with the buttons, the keyboard arrows, or by clicking the services.</p>
+  <div class="map" id="map"></div>
+  <div class="stepbar" id="dots"></div>
+  <div class="grid2">
+    <div>
+      <span class="tag" id="stag"></span>
+      <h3 id="stitle" style="margin-top:0;font-size:20px"></h3>
+      <p id="sbody"></p>
+      <div class="why" id="swhy"></div>
+      <div class="file" id="sfile"></div>
+    </div>
+    <div>
+      <p class="hint" style="margin-bottom:4px" id="plabel"></p>
+      <pre id="spay"></pre>
+    </div>
+  </div>
+  <div class="nav">
+    <button class="btn" id="prev">← Previous</button>
+    <button class="btn primary" id="next">Next →</button>
+    <span class="hint" id="pos"></span>
+  </div>
+</section>
+
+<section class="card" id="pilares">
+  <h2>The four AI features in use</h2>
+  <p class="hint">Switch between "without" and "with" to see what each one changes. The answers are illustrative examples, not real model outputs.</p>
+  <div class="tabs" id="ptabs"></div>
+  <div id="ppanels"></div>
+</section>
+
+<section class="card" id="falhas">
+  <h2>3 · When something goes wrong</h2>
+  <p class="hint">The queue and DynamoDB exist for these cases. Pick a scenario.</p>
+  <div class="fails" id="fchips"></div>
+  <table><tbody id="ftable"></tbody></table>
+</section>
+
+<section class="card">
+  <h2>4 · Where everything lives</h2>
+  <table>
+    <tr><th>File</th><th>Role</th></tr>
+    <tr><td><code>template.yaml</code></td><td>Creates SNS, SQS + DLQ, DynamoDB, Lambda and permissions (SAM)</td></tr>
+    <tr><td><code>src/handler.mjs</code></td><td>Lambda entry point: orchestrates and decides what goes back to the queue</td></tr>
+    <tr><td><code>src/parseEvent.mjs</code></td><td>Unwraps SQS → SNS → WhatsApp message</td></tr>
+    <tr><td><code>src/conversa.mjs</code></td><td>DynamoDB: history, lock, idempotency, students</td></tr>
+    <tr><td><code>src/atendente.mjs</code></td><td>Core: RAG + Converse + tools + guardrail + cache</td></tr>
+    <tr><td><code>src/rag.mjs</code> · <code>tools.mjs</code> · <code>guardrail.mjs</code></td><td>Each AI feature in its own module</td></tr>
+    <tr><td><code>src/whatsapp.mjs</code></td><td>Sending with <code>SendWhatsAppMessage</code></td></tr>
+  </table>
+  <div class="why" style="margin-top:14px"><b>Project status:</b> code written and parser tested, but not yet deployed to AWS. The format of <code>originationPhoneNumberId</code> and the SNS topic policy must be confirmed in the first real test.</div>
+</section>
+
+<footer>Source: <code>whatsapp/FLUXO.md</code> e <code>whatsapp/src/</code>. Docs: <a style="color:var(--accent)" href="https://docs.aws.amazon.com/end-user-messaging/latest/userguide/nx-whatsapp-send-inbound.html">WhatsApp inbound messaging</a> · <a style="color:var(--accent)" href="https://docs.aws.amazon.com/social-messaging/latest/userguide/whatsapp-send-message.html">SendWhatsAppMessage</a>.</footer>
+</div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const esc = (s) => s.replace(/&/g,"&amp;").replace(/</g,"&lt;");
+$("#theme").onclick = () => { const r = document.documentElement;
+  const dark = r.dataset.theme ? r.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  r.dataset.theme = dark ? "light" : "dark"; };
+
+/* ---------- 1 · JOURNEY ---------- */
+const SVC = [ ["wa","WhatsApp","customer"], ["eum","End User Messaging","Social"], ["sns","SNS","topic"], ["sqs","SQS","queue + DLQ"],
+              ["lam","Lambda","Node.js"], ["ddb","DynamoDB","state"], ["br","Bedrock","KB + model"] ];
+const STEPS = [
+  { svc:"wa", tag:"input", title:"The customer writes",
+    body:"Diego sends a text message to the company's WhatsApp Business number.",
+    why:"When the customer writes, a 24-hour window opens in which you can reply with free text. After that, only with an approved template.",
+    file:"", pl:"what the customer sees", pay:"Diego: How much is the VIP ticket?" },
+  { svc:"eum", tag:"AWS End User Messaging Social", title:"WhatsApp reaches AWS",
+    body:"The AWS service that connects your account to WhatsApp Business receives the message and publishes it to an SNS topic.",
+    why:"No webhook server to maintain. You turn on \"Message and event publishing\" on the number and choose the topic. The same topic also receives status events (sent, read).",
+    file:"template.yaml (Topico) · End User Messaging console",
+    pl:"published event (summary)", pay:`{
+  "context": { "MetaPhoneNumberIds": [{ "arn": "…phone-number-id/976c…" }] },
+  "whatsAppWebhookEntry": "{…JSON inside a string…}",
+  "message_timestamp": "2025-01-08T23:30:43Z"
+}` },
+  { svc:"sns", tag:"Amazon SNS", title:"SNS distributes",
+    body:"The topic receives the event and delivers it to whoever is subscribed. Here, an SQS queue.",
+    why:"Decouples producer from consumer: tomorrow you can subscribe another consumer (e.g., auditing) without touching the rest. Note: the topic is standard, with no ordering guarantee.",
+    file:"template.yaml (Topico, Assinatura)",
+    pl:"the body becomes an SNS envelope", pay:`{
+  "Type": "Notification",
+  "Message": "{…the event above, as a string…}"
+}` },
+  { svc:"sqs", tag:"Amazon SQS", title:"The queue holds the traffic",
+    body:"The message waits in the queue until Lambda picks it up. If processing fails, it returns and is retried, up to 5 times. After that it goes to the DLQ.",
+    why:"Absorbs spikes and protects Bedrock from too many calls. Lambda reads in batches of up to 5 and concurrency is capped at 10.",
+    file:"template.yaml (Fila, Dlq, BatchSize 5, maxReceiveCount 5)",
+    pl:"relevant configuration", pay:`VisibilityTimeout: 180   # ≥ 6x the Lambda timeout (30s)
+maxReceiveCount:   5     # then it goes to the DLQ
+BatchSize:         5
+ReportBatchItemFailures  # only the failed ones go back` },
+  { svc:"lam", tag:"AWS Lambda", title:"Lambda unwraps and sorts",
+    body:"The handler opens the layers (SQS → SNS → WhatsApp), keeps only customer messages, ignores status events and sorts by timestamp. Then it checks whether this message was already processed.",
+    why:"Standard SNS does not guarantee order, so the code sorts. Checking the message ID (wamid) avoids replying twice if delivery duplicates.",
+    file:"src/handler.mjs · src/parseEvent.mjs",
+    pl:"parser output", pay:`{
+  "messageId": "wamid.EXEMPLO1",
+  "telefone":  "14255550150",
+  "nome":      "Diego",
+  "tipo":      "text",
+  "texto":     "How much is the VIP ticket?",
+  "timestamp": 1723506035
+}` },
+  { svc:"ddb", tag:"Amazon DynamoDB", title:"The conversation is loaded, with a lock",
+    body:"Lambda keeps no memory between invocations. The history lives in DynamoDB, keyed by phone number, and a 60-second lock prevents two Lambdas from touching the same conversation at the same time.",
+    why:"Key-based access, serverless, with a 24h TTL (the same as the WhatsApp window). Keeps only the last 20 messages to limit tokens and stay under the 400 KB item limit.",
+    file:"src/conversa.mjs",
+    pl:"single-table keys", pay:`CONVERSA#<phone>  → messages, lockUntil, ttl
+MSG#<wamid>       → ttl            (idempotency)
+ALUNO#<email>     → name, ticket, status, order` },
+  { svc:"br", tag:"Amazon Bedrock", title:"The AI searches, thinks and answers",
+    body:"First a Knowledge Base search (RAG). Passages above the minimum score are added to the question. Then Converse calls the model, which may request tools. The guardrail watches input and output.",
+    why:"This is where the four features from section 2 live. The large system prompt is cached, and the customer's name goes after the cachePoint so the cache serves everyone.",
+    file:"src/atendente.mjs · rag.mjs · tools.mjs · guardrail.mjs",
+    pl:"what goes to the model", pay:`system:   prompt.txt + [cachePoint 1h] + "Name: Diego"
+messages: [...history,
+  "<context>[1] source: … </context>
+   Answer using ONLY the context above.
+   Customer question: How much is the VIP ticket?"]
+toolConfig:      consultar_matricula, gerar_link_pagamento
+guardrailConfig: { id, version, trace: enabled }` },
+  { svc:"eum", tag:"SendWhatsAppMessage", title:"The reply goes back the same way",
+    body:"Lambda calls the SendWhatsAppMessage API of End User Messaging Social, which delivers the reply to the customer on WhatsApp.",
+    why:"The reply is not the Lambda return value. It is an explicit API call. The payload follows Meta's Cloud API format, sent as bytes.",
+    file:"src/whatsapp.mjs",
+    pl:"message sent", pay:`{
+  "messaging_product": "whatsapp",
+  "recipient_type": "individual",
+  "to": "14255550150",
+  "type": "text",
+  "text": { "body": "Hi, Diego! VIP costs 97 … Want the VIP?" }
+}` },
+  { svc:"ddb", tag:"wrap-up", title:"Save and finish",
+    body:"Only after sending, Lambda writes the new history, releases the lock and marks the message as processed. Lambda returns the list of failures, empty in this case, and SQS deletes the message.",
+    why:"If something fails midway, the retry redoes everything. The known risk: if Lambda crashes between sending and saving, the customer may receive the reply twice.",
+    file:"src/handler.mjs (processar) · src/conversa.mjs",
+    pl:"Lambda return value", pay:`{ "batchItemFailures": [] }` },
+];
+let cur = 0;
+const mapEl = $("#map");
+SVC.forEach((s, i) => {
+  const d = document.createElement("button"); d.className = "svc"; d.dataset.k = s[0];
+  d.innerHTML = `<b>${s[1]}</b><span>${s[2]}</span>`;
+  d.onclick = () => { const j = STEPS.findIndex(x => x.svc === s[0]); if (j >= 0) go(j); };
+  mapEl.appendChild(d);
+  if (i < SVC.length - 1) { const a = document.createElement("span"); a.className = "arr"; a.textContent = "→"; mapEl.appendChild(a); }
+});
+STEPS.forEach((_, i) => { const b = document.createElement("button"); b.className = "dot"; b.textContent = i + 1; b.onclick = () => go(i); $("#dots").appendChild(b); });
+function render() {
+  const s = STEPS[cur];
+  $("#stag").textContent = s.tag; $("#stitle").textContent = s.title; $("#sbody").textContent = s.body;
+  $("#swhy").innerHTML = "<b>Why it works this way:</b> " + esc(s.why);
+  $("#sfile").textContent = s.file ? "📄 " + s.file : "";
+  $("#plabel").textContent = s.pl; $("#spay").textContent = s.pay;
+  $("#pos").textContent = `step ${cur + 1} of ${STEPS.length}`;
+  $("#prev").disabled = cur === 0; $("#next").disabled = cur === STEPS.length - 1;
+  document.querySelectorAll(".dot").forEach((d, i) => d.className = "dot" + (i === cur ? " on" : i < cur ? " done" : ""));
+  const passed = new Set(STEPS.slice(0, cur).map(x => x.svc));
+  document.querySelectorAll(".svc").forEach(d => d.className = "svc" + (d.dataset.k === s.svc ? " on" : passed.has(d.dataset.k) ? " past" : ""));
+}
+function go(i) { cur = Math.max(0, Math.min(STEPS.length - 1, i)); render(); }
+$("#prev").onclick = () => go(cur - 1); $("#next").onclick = () => go(cur + 1);
+addEventListener("keydown", (e) => { if (e.key === "ArrowRight") go(cur + 1); if (e.key === "ArrowLeft") go(cur - 1); });
+
+/* ---------- 2 · PILLARS ---------- */
+const bub = (c, who, txt) => `<div class="bubble ${c}"><small>${who}</small>${txt}</div>`;
+const PIL = [
+  { id:"rag", nome:"RAG",
+    why:"The model does not know your prices or your rules. RAG retrieves passages from your documents and hands them over together with the question, so it answers based on them.",
+    uso:"On every message, <code>rag.mjs</code> calls <code>Retrieve</code> on the Knowledge Base (top 20, with managed reranking) and discards passages below a 0.5 score. What remains goes inside <code>&lt;contexto&gt;</code>, with the instruction to use ONLY that context. The search is unconditional: the code decides, not the model.",
+    sem:[bub("u","customer","How much is the VIP ticket?"), bub("x","model without context","I don't have access to current prices… (or worse: an invented value.)")],
+    com:[bub("u","customer","How much is the VIP ticket?"), bub("b","model with context","Hi, Diego! VIP costs 97 and includes an extra class and 7 days of recordings. Want the VIP?")],
+    m:[["noise","filtered by score"],["+tokens","passages go into the input"]] },
+  { id:"tools", nome:"Tools",
+    why:"RAG answers with static text. For live data (was the purchase confirmed?) the model needs to call a function of yours. That is tool use.",
+    uso:"Two tools in <code>tools.mjs</code>: <code>consultar_matricula</code> (reads DynamoDB) and <code>gerar_link_pagamento</code>. The model returns <code>tool_use</code>, the code runs it and returns the <code>toolResult</code>, within up to 5 turns. The rule \"look up before generating the link\" lives only in the tool description, and is not a guarantee.",
+    sem:[bub("u","customer","Did I pay already? My email is maria@email.com"), bub("x","model without tool","I can't check the status of your purchase. Please contact support.")],
+    com:[bub("u","customer","Did I pay already? My email is maria@email.com"), bub("b","model → tool_use","consultar_matricula(maria@email.com) → status: confirmed"), bub("b","model","Hi, Maria! Yes, your payment is confirmed. Order HP-88213.")],
+    m:[["up to 5","tool calls per question"],["+1 turn","for each tool used"]] },
+  { id:"guard", nome:"Guardrails",
+    why:"Customers type what they shouldn't (credit card) and the model may generate what it shouldn't. The guardrail filters both sides, configured in Bedrock rather than in the prompt.",
+    uso:"<code>guardrailConfig</code> goes in every Converse call, with <code>trace: enabled</code>. If it blocks, the stopReason is <code>guardrail_intervened</code>: the block text goes to the customer and the question <b>is not added</b> to the history, otherwise it would be resent and blocked again every turn. <code>GUARDRAIL_ID=off</code> turns it off.",
+    sem:[bub("u","customer","my card is 4111 1111 1111 1111"), bub("x","no guardrail","The number reaches the model, the logs and the history.")],
+    com:[bub("u","customer","my card is 4111 1111 1111 1111"), bub("b","guardrail · input","Blocked before the model. inputTokens = 0, nothing is generated or charged."), bub("b","customer receives","Block text defined in the console.")],
+    m:[["input","block with no token cost"],["output","generation was already paid for"]] },
+  { id:"cache", nome:"Prompt caching",
+    why:"The system prompt is large and identical across all conversations. Without caching, you pay to reprocess it on every message.",
+    uso:"In <code>atendente.mjs</code> the system is <code>[prompt.txt, cachePoint 1h, customer name]</code>. The name comes after the cachePoint so it does not invalidate the cache. Since the prompt is the same for every customer, the cache is shared. From the course comments: cache read costs 10% of the price, write 200%.",
+    sem:[bub("u","every message","Entire prompt processed at full price, every time.")],
+    com:[bub("b","1st message","Writes the cache (200% of the passage price)."), bub("b","following messages (≤ 1h)","Reads the cache (10% of the price).")],
+    m:[["10%","cache read price"],["200%","cache write price"],["1h","configured TTL"]] },
+];
+const pt = $("#ptabs"), pp = $("#ppanels");
+PIL.forEach((p, i) => {
+  const t = document.createElement("button"); t.className = "tab" + (i === 0 ? " on" : ""); t.textContent = p.nome; t.dataset.i = i;
+  t.onclick = () => { document.querySelectorAll(".tab").forEach(x => x.classList.toggle("on", x === t)); document.querySelectorAll(".panel").forEach(x => x.classList.toggle("on", x.dataset.i == i)); };
+  pt.appendChild(t);
+  const d = document.createElement("div"); d.className = "panel" + (i === 0 ? " on" : ""); d.dataset.i = i;
+  d.innerHTML = `
+    <div class="grid2"><div>
+      <h3 style="margin-top:0">Why it matters</h3><p>${p.why}</p>
+      <h3>How it is used here</h3><p>${p.uso}</p>
+      <div class="meter">${p.m.map(m => `<div><b>${m[0]}</b>${m[1]}</div>`).join("")}</div>
+    </div><div>
+      <div class="sw"><button data-m="sem">Without ${p.nome}</button><button data-m="com" class="on">With ${p.nome}</button></div>
+      <div class="demo"></div>
+    </div></div>`;
+  const demo = d.querySelector(".demo");
+  const show = (m) => { demo.innerHTML = p[m].join(""); d.querySelectorAll(".sw button").forEach(b => b.classList.toggle("on", b.dataset.m === m)); };
+  d.querySelectorAll(".sw button").forEach(b => b.onclick = () => show(b.dataset.m));
+  show("com"); pp.appendChild(d);
+});
+
+/* ---------- 3 · FAILURES ---------- */
+const FAIL = [
+  ["Duplicate message", "SNS/SQS delivered the same message twice.", "The handler looks up <code>MSG#&lt;wamid&gt;</code> in DynamoDB. If it exists, it skips the message.", "The customer gets only one reply."],
+  ["Conversation busy", "Another Lambda is processing the same phone number.", "The lock fails (<code>ConversaOcupadaError</code>). The message goes into <code>batchItemFailures</code> and returns to the queue.", "Retried later, in order."],
+  ["Bedrock error", "Throttling, timeout or KB failure.", "The handler releases the lock and marks the message as failed. SQS redelivers, up to 5 times.", "After the 5th, it goes to the DLQ for analysis."],
+  ["Guardrail blocks", "The customer types sensitive data.", "The block text is sent. The question is not added to the history.", "The conversation continues normally on the next turn."],
+  ["Audio or image", "A message that is not text.", "Fixed reply asking for text. The model is not called.", "Zero tokens spent."],
+  ["Unreadable payload", "The event does not have the expected format.", "Logs <code>evento_invalido</code> and discards it. A retry would not help.", "Does not pollute the DLQ."],
+];
+FAIL.forEach((f, i) => { const c = document.createElement("button"); c.className = "chip" + (i === 0 ? " on" : ""); c.textContent = f[0];
+  c.onclick = () => { document.querySelectorAll(".chip").forEach(x => x.classList.toggle("on", x === c)); showFail(i); }; $("#fchips").appendChild(c); });
+function showFail(i) { const f = FAIL[i];
+  $("#ftable").innerHTML = `<tr><th>Situation</th><td>${f[1]}</td></tr><tr><th>What the code does</th><td>${f[2]}</td></tr><tr><th>Result</th><td>${f[3]}</td></tr>`; }
+showFail(0); render();
+</script>
+</body>
+</html>

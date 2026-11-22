@@ -84,6 +84,7 @@ Cada bloco abaixo tem um script que faz exatamente o que o bloco descreve. **Pre
 | `06-seed-dynamodb.sh` | 6 | Insere os alunos `maria` e `joao`. |
 | `07-whatsapp.sh` | 7 | Roteiro manual do cadastro. Com `check`, confere a WABA vinculada. |
 | `08-smoke-test.sh` | 8 | Injeta o evento de exemplo na fila e mostra os logs. |
+| `deploy-lambda.sh` | depois do 5 | Sobe uma nova versão do código (prompt.txt, src/): testes, `sam build`, `sam deploy` com os parâmetros do `.state.env`. Use a cada alteração no prompt ou no código. |
 | `99-destroy.sh` | 9 | Remove tudo, depois de você digitar o nome do stack. |
 | `run-all.sh` | 1 a 6 | Roda os scripts 01 a 06 em ordem. |
 

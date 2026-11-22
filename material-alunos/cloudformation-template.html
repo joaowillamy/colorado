@@ -1,0 +1,1018 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CloudFormation do zero · o template do atendente de WhatsApp</title>
+<style>
+  :root { --bg:#F1F0EC; --surface:#fff; --ink:#15171B; --muted:#6E6C63; --line:#D6D4CC; --line-soft:#E4E2DB;
+    --accent:#B45309; --accent-ink:#8A3D06; --accent-bg:#FDF3E0; --ok:#15803D; --ok-bg:#E3F4E8; --bad:#B91C1C; --bad-bg:#FBE7E7;
+    --info:#1D4ED8; --info-bg:#E6EDFB; --warn:#A16207; --warn-bg:#FBF3D9;
+    --code-bg:#17191E; --code-ink:#E6E4DC; --shadow:0 1px 2px rgba(20,22,26,.06),0 8px 24px -16px rgba(20,22,26,.24);
+    --sans:ui-sans-serif,system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif; --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
+  :root[data-theme="dark"]{ --bg:#0C0E12; --surface:#14181E; --ink:#ECEBE5; --muted:#918F86; --line:#272C34; --line-soft:#1D222A;
+    --accent:#F5B841; --accent-ink:#F7C766; --accent-bg:#241C0C; --ok:#5AD08A; --ok-bg:#0F2418; --bad:#F27B7B; --bad-bg:#2A1212;
+    --info:#7FA6F5; --info-bg:#101A2E; --warn:#E8C25A; --warn-bg:#231C08; --code-bg:#0A0C10; }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.6;margin:0;-webkit-font-smoothing:antialiased}
+  .layout{display:grid;grid-template-columns:230px 1fr;gap:28px;max-width:1240px;margin:0 auto;padding:clamp(18px,4vw,44px) clamp(14px,3vw,32px) 90px}
+  @media (max-width:900px){.layout{grid-template-columns:1fr}.toc{display:none}}
+  .toc{position:sticky;top:20px;align-self:start;font-size:14px}
+  .toc a{display:block;color:var(--muted);text-decoration:none;padding:5px 10px;border-left:2px solid var(--line);}
+  .toc a:hover,.toc a.on{color:var(--ink);border-left-color:var(--accent)}
+  .toc .eyebrow{margin:0 0 8px 10px}
+  main{display:flex;flex-direction:column;gap:30px;min-width:0}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)}
+  h1{font-size:clamp(26px,4vw,38px);line-height:1.15;margin:6px 0 10px}
+  h2{font-size:23px;margin:0 0 6px} h3{font-size:16px;margin:16px 0 6px}
+  p{margin:0 0 10px} .lead{color:var(--muted);max-width:70ch;font-size:17px} .hint{color:var(--muted);font-size:13px}
+  code{font-family:var(--mono);font-size:.88em;background:var(--accent-bg);color:var(--accent-ink);padding:1px 6px;border-radius:5px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:24px}
+  .num{font-family:var(--mono);color:var(--accent);font-size:13px;margin-right:6px}
+  button{font:inherit;cursor:pointer;color:var(--ink)}
+  .btn{background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:7px 13px;font-size:14px}
+  .btn:hover{border-color:var(--accent)} .btn:disabled{opacity:.4;cursor:default}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  :root[data-theme="dark"] .btn.primary{color:#15171B}
+  .btn.on{border-color:var(--accent);background:var(--accent-bg);color:var(--accent-ink)}
+  button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px} @media (max-width:820px){.grid2{grid-template-columns:1fr}}
+  .note{border-left:3px solid var(--accent);background:var(--accent-bg);padding:10px 14px;border-radius:0 9px 9px 0;margin:12px 0;font-size:15px}
+  .note.ok{border-color:var(--ok);background:var(--ok-bg)} .note.bad{border-color:var(--bad);background:var(--bad-bg)} .note.info{border-color:var(--info);background:var(--info-bg)}
+  .note b:first-child{display:block;margin-bottom:2px}
+  table{border-collapse:collapse;width:100%;font-size:14px}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+  th{color:var(--muted);font-weight:600;font-size:13px}
+  /* código */
+  .code{background:var(--code-bg);color:var(--code-ink);border-radius:10px;font-family:var(--mono);font-size:12.5px;line-height:1.55;overflow:auto;max-height:520px;padding:10px 0}
+  .code.short{max-height:none}
+  .ln{display:flex;padding:0 14px 0 0;white-space:pre;transition:background .25s}
+  .ln .n{width:38px;flex:none;text-align:right;padding-right:12px;color:#5F646E;user-select:none}
+  .ln.hl{background:rgba(245,184,65,.16)} .ln.hl .n{color:#F5B841}
+  .ln.dim{opacity:.38}
+  .t-c{color:#7E8592;font-style:italic} .t-k{color:#8FC1FF} .t-tag{color:#F5B841;font-weight:600} .t-s{color:#9BDB8B} .t-n{color:#E9A0F0}
+  pre.plain{background:var(--code-bg);color:var(--code-ink);border-radius:10px;font-family:var(--mono);font-size:12.5px;line-height:1.55;padding:12px 14px;overflow:auto;margin:8px 0}
+  /* chips */
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+  .chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px;font-family:var(--mono);font-size:12.5px}
+  .chip.on{border-color:var(--accent);background:var(--accent-bg);color:var(--accent-ink)}
+  .chip .opt{color:var(--muted);font-family:var(--sans);font-size:11px;margin-left:4px}
+  .panel{background:var(--bg);border:1px solid var(--line-soft);border-radius:11px;padding:14px 16px}
+  .badge{display:inline-block;font-family:var(--mono);font-size:11.5px;padding:2px 8px;border-radius:6px;font-weight:600}
+  .b-ok{background:var(--ok-bg);color:var(--ok)} .b-warn{background:var(--warn-bg);color:var(--warn)} .b-bad{background:var(--bad-bg);color:var(--bad)} .b-info{background:var(--info-bg);color:var(--info)}
+  /* analogia */
+  .analog{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px} @media (max-width:820px){.analog{grid-template-columns:1fr 1fr}}
+  .an{border:1px solid var(--line);border-radius:11px;padding:12px;background:var(--surface);cursor:pointer;transition:transform .15s,border-color .15s}
+  .an:hover{transform:translateY(-2px);border-color:var(--accent)} .an.on{border-color:var(--accent);background:var(--accent-bg)}
+  .an .ico{font-size:24px} .an b{display:block;margin:4px 0 0} .an span{font-size:13px;color:var(--muted)}
+  /* grafo */
+  .graph-wrap{overflow-x:auto}
+  svg text{font-family:var(--sans)}
+  .gnode rect{fill:var(--surface);stroke:var(--line);stroke-width:1.5;rx:10;transition:fill .3s,stroke .3s}
+  .gnode text{fill:var(--ink);font-size:13px;font-weight:600}
+  .gnode .ty{fill:var(--muted);font-size:10.5px;font-weight:400;font-family:var(--mono)}
+  .gnode.param rect{stroke-dasharray:5 4}
+  .gnode.prog rect{fill:var(--warn-bg);stroke:var(--warn)} .gnode.cfg rect{fill:var(--info-bg);stroke:var(--info)}
+  .gnode.done rect{fill:var(--ok-bg);stroke:var(--ok)} .gnode.fail rect{fill:var(--bad-bg);stroke:var(--bad)}
+  .gnode.del rect{fill:var(--bg);stroke:var(--line);opacity:.5} .gnode.del text{opacity:.4}
+  .gnode.focus rect{stroke:var(--accent);stroke-width:2.5}
+  .gedge{stroke:var(--line);stroke-width:1.6;fill:none;transition:stroke .3s}
+  .gedge.focus{stroke:var(--accent);stroke-width:2.4}
+  .gedge-l{font-size:10px;fill:var(--muted);font-family:var(--mono)}
+  .pulse rect{animation:pulse 1s ease-in-out infinite}
+  @keyframes pulse{50%{opacity:.55}}
+  .events{background:var(--code-bg);color:var(--code-ink);font-family:var(--mono);font-size:12px;border-radius:10px;height:230px;overflow:auto;padding:8px 12px}
+  .ev{display:grid;grid-template-columns:62px 130px 1fr;gap:8px;padding:2px 0;animation:fadein .3s}
+  .ev .s-prog{color:#E8C25A} .ev .s-done{color:#5AD08A} .ev .s-fail{color:#F27B7B} .ev .s-cfg{color:#7FA6F5} .ev .s-del{color:#9AA0AA}
+  @keyframes fadein{from{opacity:0;transform:translateX(-4px)}}
+  .clock{font-family:var(--mono);font-size:13px;color:var(--muted)}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin-top:8px}
+  .legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-1px;border:1.5px solid}
+  /* resolver */
+  .exprs{display:flex;flex-direction:column;gap:6px}
+  .expr{text-align:left;font-family:var(--mono);font-size:13px;border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:8px 12px}
+  .expr.on{border-color:var(--accent);background:var(--accent-bg)}
+  .arrow-out{font-family:var(--mono);font-size:13px;word-break:break-all;background:var(--code-bg);color:#9BDB8B;padding:10px 12px;border-radius:9px;margin:8px 0;min-height:42px;transition:opacity .3s}
+  /* SAM */
+  .sam-stage{display:flex;align-items:center;justify-content:center;gap:14px;min-height:150px;flex-wrap:wrap;padding:10px}
+  .sbox{border:1.5px solid var(--line);border-radius:11px;padding:12px 16px;background:var(--surface);text-align:center;transition:all .5s cubic-bezier(.2,.8,.2,1);min-width:160px}
+  .sbox small{display:block;font-family:var(--mono);color:var(--muted);font-size:11px}
+  .sbox.src{border-color:var(--accent);background:var(--accent-bg)}
+  .sbox.gen{border-color:var(--ok);background:var(--ok-bg)}
+  .sbox.hide{opacity:0;transform:scale(.6);width:0;min-width:0;padding:0;border-width:0;overflow:hidden}
+  .macro{font-family:var(--mono);font-size:12px;color:var(--muted);transition:opacity .4s}
+  /* stepper */
+  .steps{display:flex;gap:0;margin:14px 0 6px;flex-wrap:wrap}
+  .step{flex:1;min-width:110px;text-align:center;font-size:12.5px;color:var(--muted);position:relative;padding-top:30px;cursor:pointer}
+  .step::before{content:attr(data-n);position:absolute;top:0;left:50%;transform:translateX(-50%);width:24px;height:24px;border-radius:50%;border:2px solid var(--line);background:var(--surface);font-family:var(--mono);font-size:12px;line-height:20px;color:var(--muted)}
+  .step::after{content:"";position:absolute;top:11px;left:calc(50% + 14px);right:calc(-50% + 14px);height:2px;background:var(--line)}
+  .step:last-child::after{display:none}
+  .step.on{color:var(--ink);font-weight:600} .step.on::before{border-color:var(--accent);background:var(--accent);color:#fff}
+  .step.past::before{border-color:var(--ok);color:var(--ok)} .step.past::after{background:var(--ok)}
+  /* update sim */
+  .upd-list{display:flex;flex-direction:column;gap:6px}
+  .upd{text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:9px 12px;font-size:14px}
+  .upd.on{border-color:var(--accent);background:var(--accent-bg)}
+  .meter{display:flex;gap:6px;margin:8px 0 12px}
+  .meter div{flex:1;text-align:center;font-size:12px;padding:6px;border-radius:7px;border:1px solid var(--line);color:var(--muted)}
+  .meter .m-ok.lit{background:var(--ok-bg);border-color:var(--ok);color:var(--ok);font-weight:700}
+  .meter .m-warn.lit{background:var(--warn-bg);border-color:var(--warn);color:var(--warn);font-weight:700}
+  .meter .m-bad.lit{background:var(--bad-bg);border-color:var(--bad);color:var(--bad);font-weight:700}
+  /* replacement anim */
+  .rep{display:flex;gap:10px;align-items:center;margin:10px 0;min-height:56px}
+  .rbox{border:1.5px solid var(--line);border-radius:9px;padding:6px 10px;font-family:var(--mono);font-size:11.5px;transition:all .6s}
+  .rbox.old{border-color:var(--muted)} .rbox.new{border-color:var(--ok);background:var(--ok-bg)} .rbox.gone{opacity:.25;text-decoration:line-through}
+  /* terraform */
+  .tf-row{cursor:pointer} .tf-row:hover td{background:var(--accent-bg)}
+  .tf-row.on td{background:var(--accent-bg)}
+  /* quiz */
+  .q{border:1px solid var(--line-soft);border-radius:11px;padding:14px 16px;margin-bottom:12px;background:var(--bg)}
+  .q p{font-weight:600}
+  .opts{display:flex;flex-direction:column;gap:6px}
+  .opt{text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 12px;font-size:14px}
+  .opt.right{border-color:var(--ok);background:var(--ok-bg)} .opt.wrong{border-color:var(--bad);background:var(--bad-bg)}
+  .fb{font-size:14px;margin-top:8px;display:none} .fb.show{display:block}
+  .score{font-family:var(--mono);font-size:14px}
+  details{border:1px solid var(--line-soft);border-radius:10px;padding:8px 14px;margin:8px 0;background:var(--bg)}
+  details summary{cursor:pointer;font-weight:600}
+  .top{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}
+  a{color:var(--accent-ink)}
+  .kbd{font-family:var(--mono);font-size:12px;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:0 5px}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="toc" id="toc">
+  <div class="eyebrow">Roteiro</div>
+  <a href="#s1">1 · O que é, em 1 minuto</a>
+  <a href="#s2">2 · Vindo do Terraform</a>
+  <a href="#s3">3 · Anatomia do template</a>
+  <a href="#s4">4 · Um recurso por dentro</a>
+  <a href="#s5">5 · Recurso a recurso</a>
+  <a href="#s6">6 · Ref, GetAtt e Sub</a>
+  <a href="#s7">7 · Dependências e deploy</a>
+  <a href="#s8">8 · O Transform do SAM</a>
+  <a href="#s9">9 · Do sam deploy ao no ar</a>
+  <a href="#s10">10 · E se eu mudar...?</a>
+  <a href="#s11">11 · Proteger dados e drift</a>
+  <a href="#s12">12 · Teste você</a>
+  <a href="#s13">13 · Cola rápida</a>
+</nav>
+
+<main>
+<header class="top">
+  <div>
+    <div class="eyebrow">Projeto whatsapp/ · infraestrutura como código</div>
+    <h1>CloudFormation do zero, lendo o template que você já subiu</h1>
+    <p class="lead">Tudo aqui usa o <code>whatsapp/template.yaml</code> real e os eventos reais do deploy do stack <code>whatsapp-atendente</code> em us-east-2. Clique, avance e simule. O número da conta foi trocado por <code>123456789012</code>.</p>
+  </div>
+  <button class="btn" id="theme">◐ tema</button>
+</header>
+
+<!-- 1 -->
+<section class="card" id="s1">
+  <h2><span class="num">01</span>O que é, em 1 minuto</h2>
+  <p>O <b>CloudFormation</b> é o serviço da AWS que lê um arquivo de texto (o <b>template</b>) descrevendo a infraestrutura que você quer e cria tudo para você, na ordem certa. Se algo der errado no meio, ele desfaz. Depois, quando você muda o arquivo, ele muda só o que mudou.</p>
+  <p class="hint">Clique em cada peça da analogia da obra:</p>
+  <div class="analog" id="analog">
+    <div class="an" data-k="tpl"><div class="ico">📐</div><b>Planta da casa</b><span>= template</span></div>
+    <div class="an" data-k="cfn"><div class="ico">👷</div><b>Mestre de obras</b><span>= CloudFormation</span></div>
+    <div class="an" data-k="stack"><div class="ico">🏠</div><b>A casa construída</b><span>= stack</span></div>
+    <div class="an" data-k="cs"><div class="ico">🧾</div><b>Orçamento da reforma</b><span>= change set</span></div>
+  </div>
+  <div class="panel" id="analog-out" style="margin-top:12px">Escolha uma peça acima.</div>
+</section>
+
+<!-- 2 -->
+<section class="card" id="s2">
+  <h2><span class="num">02</span>Vindo do Terraform</h2>
+  <p>Você já conhece a ideia de "infraestrutura como código". A maior diferença está em <b>onde fica o estado</b>. No Terraform existe o arquivo <code>terraform.tfstate</code>, que você guarda e protege. No CloudFormation, o estado é o próprio <b>stack</b>, guardado pela AWS. Não há arquivo de estado para perder.</p>
+  <p class="hint">Clique numa linha para ver os dois lados lado a lado.</p>
+  <table id="tf">
+    <thead><tr><th>Terraform</th><th>CloudFormation</th><th>Neste projeto</th></tr></thead>
+    <tbody></tbody>
+  </table>
+  <div class="grid2" id="tf-cmp" style="margin-top:12px">
+    <div><div class="hint">Terraform</div><pre class="plain" id="tf-l"></pre></div>
+    <div><div class="hint">CloudFormation</div><pre class="plain" id="tf-r"></pre></div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="card" id="s3">
+  <h2><span class="num">03</span>Anatomia do template</h2>
+  <p>Um template é um documento YAML (ou JSON) com algumas <b>seções</b> no nível mais externo. Só <code>Resources</code> é obrigatória. Clique numa seção para ver onde ela está no seu arquivo e para que serve.</p>
+  <div class="chips" id="sec-chips"></div>
+  <div class="grid2">
+    <div class="panel" id="sec-out"></div>
+    <div class="code" id="code-main"></div>
+  </div>
+</section>
+
+<!-- 4 -->
+<section class="card" id="s4">
+  <h2><span class="num">04</span>Um recurso por dentro</h2>
+  <p>Todo recurso tem a mesma forma: um <b>nome lógico</b>, um <b>Type</b> e as <b>Properties</b>. Passe o mouse ou clique nas partes do exemplo.</p>
+  <div class="grid2">
+    <div>
+      <pre class="plain" id="anat" style="font-size:14px;line-height:1.8"></pre>
+      <div class="row"><button class="btn" data-anat="logical">Nome lógico</button><button class="btn" data-anat="type">Type</button><button class="btn" data-anat="props">Properties</button><button class="btn" data-anat="tag">!GetAtt</button></div>
+    </div>
+    <div class="panel" id="anat-out">Clique numa parte.</div>
+  </div>
+  <h3>Nome lógico vira nome físico</h3>
+  <p>No template você escreve <code>Fila</code>. Na AWS o recurso ganha um <b>nome físico</b> gerado: nome do stack + nome lógico + sufixo aleatório. Por isso o seu código nunca escreve o nome da fila na mão: ele recebe o valor por variável de ambiente.</p>
+  <div class="row"><button class="btn primary" id="phys-btn">▶ Ver a tradução</button></div>
+  <div id="phys" style="margin-top:10px"></div>
+</section>
+
+<!-- 5 -->
+<section class="card" id="s5">
+  <h2><span class="num">05</span>Recurso a recurso</h2>
+  <p>Os 8 recursos do seu template, na ordem em que o dado anda: o WhatsApp publica no tópico, o tópico entrega na fila, a fila aciona a Lambda.</p>
+  <div class="chips" id="res-chips"></div>
+  <div class="grid2">
+    <div class="panel" id="res-out"></div>
+    <div><div class="code short" id="res-code"></div><div class="hint" style="margin-top:6px">Equivalente aproximado em Terraform:</div><pre class="plain" id="res-tf"></pre></div>
+  </div>
+</section>
+
+<!-- 6 -->
+<section class="card" id="s6">
+  <h2><span class="num">06</span>Ref, GetAtt e Sub: como um recurso fala do outro</h2>
+  <p>Funções intrínsecas são "fórmulas" que o CloudFormation resolve na hora do deploy, como numa planilha. As três que você usa:</p>
+  <table>
+    <tr><th>Função</th><th>Lê-se</th><th>Devolve</th></tr>
+    <tr><td><code>!Ref X</code></td><td>"me dê o X"</td><td>O valor padrão do recurso, ou o valor de um parâmetro. Muda conforme o tipo: no tópico é o ARN, na fila é a URL.</td></tr>
+    <tr><td><code>!GetAtt X.Attr</code></td><td>"me dê o atributo Attr de X"</td><td>Um atributo específico, como <code>Arn</code>.</td></tr>
+    <tr><td><code>!Sub "...${X}..."</code></td><td>"substitua dentro do texto"</td><td>Um texto montado com valores de Ref, GetAtt e pseudo parâmetros.</td></tr>
+  </table>
+  <div class="note bad"><b>A pegadinha mais comum</b>O <code>!Ref</code> não devolve sempre o ARN. Na fila SQS ele devolve a <b>URL</b>. Por isso o template usa <code>!GetAtt Fila.Arn</code> onde precisa de ARN. Cada tipo de recurso documenta o que o Ref devolve na seção "Return values".</div>
+  <p class="hint">Clique numa expressão tirada do seu template para ver em que ela se transforma no deploy:</p>
+  <div class="grid2">
+    <div class="exprs" id="exprs"></div>
+    <div>
+      <div class="hint">vira, no deploy:</div>
+      <div class="arrow-out" id="expr-val">…</div>
+      <div class="panel" id="expr-why"></div>
+    </div>
+  </div>
+  <h3>Pseudo parâmetros</h3>
+  <p><code>AWS::AccountId</code>, <code>AWS::Region</code> e <code>AWS::StackName</code> já existem em qualquer template. Você não declara: usa direto. É assim que o template funciona em qualquer conta e região sem editar nada.</p>
+</section>
+
+<!-- 7 -->
+<section class="card" id="s7">
+  <h2><span class="num">07</span>Dependências e o deploy acontecendo</h2>
+  <p>Você <b>não</b> diz ao CloudFormation a ordem de criação. Ele descobre sozinho: se o recurso B usa <code>!Ref A</code> ou <code>!GetAtt A.x</code>, então A tem de existir antes. Recursos sem ligação entre si são criados <b>em paralelo</b>. Só quando não existe referência e mesmo assim a ordem importa é que se usa <code>DependsOn</code> (este template não precisa).</p>
+  <p class="hint">Passe o mouse num recurso para ver de quem ele depende. Depois aperte play: a animação reproduz os <b>eventos reais</b> da criação do seu stack em 20/11/2026, com os tempos reais (acelerados).</p>
+  <div class="row" style="margin-bottom:8px">
+    <button class="btn primary" id="sim-ok">▶ Reproduzir a criação real</button>
+    <button class="btn" id="sim-fail">⚠ Simular uma falha</button>
+    <button class="btn" id="sim-reset">↺ Zerar</button>
+    <span class="hint">Velocidade</span>
+    <button class="btn on" data-speed="6">6×</button><button class="btn" data-speed="2">2×</button><button class="btn" data-speed="1">real</button>
+    <span class="clock" id="clock">t = 0,0 s</span>
+  </div>
+  <div class="graph-wrap"><svg id="graph" viewBox="0 0 1000 380" width="100%" style="min-width:760px"></svg></div>
+  <div class="legend">
+    <span><i style="border-color:var(--line)"></i>aguardando</span>
+    <span><i style="border-color:var(--warn);background:var(--warn-bg)"></i>CREATE_IN_PROGRESS</span>
+    <span><i style="border-color:var(--info);background:var(--info-bg)"></i>CONFIGURATION_COMPLETE</span>
+    <span><i style="border-color:var(--ok);background:var(--ok-bg)"></i>CREATE_COMPLETE</span>
+    <span><i style="border-color:var(--bad);background:var(--bad-bg)"></i>FAILED</span>
+  </div>
+  <h3>Aba "Events" do stack (como no console)</h3>
+  <div class="events" id="events"></div>
+  <div class="note info" id="sim-note"><b>Repare durante a animação</b>A <code>Fila</code> e a <code>Dlq</code> só chegam a <code>CREATE_COMPLETE</code> perto dos 65 s. Mesmo assim, a <code>Assinatura</code> e a <code>FilaPolicy</code> começam aos 5 s. Isso acontece porque o CloudFormation libera os dependentes quando o recurso atinge <code>CONFIGURATION_COMPLETE</code> (já configurado, ainda na checagem de consistência). Os 60 s restantes da fila são essa checagem.</div>
+</section>
+
+<!-- 8 -->
+<section class="card" id="s8">
+  <h2><span class="num">08</span>O Transform do SAM: 1 recurso que vira 3</h2>
+  <p>A linha <code>Transform: AWS::Serverless-2016-10-31</code> liga uma <b>macro</b>: antes de criar qualquer coisa, o CloudFormation reescreve o template. Os tipos <code>AWS::Serverless::*</code> não existem de verdade; eles são atalhos que viram recursos comuns. É parecido com um <b>module</b> do Terraform.</p>
+  <div class="row"><button class="btn primary" id="sam-btn">▶ Aplicar o Transform</button><span class="hint">Os 3 recursos abaixo são os que realmente existem no seu stack (lista de recursos do stack).</span></div>
+  <div class="sam-stage" id="sam-stage">
+    <div class="sbox src" id="sb-src"><b>Funcao</b><small>AWS::Serverless::Function</small></div>
+    <span class="macro" id="sam-arrow">⟶ macro AWS::Serverless ⟶</span>
+    <div class="sbox gen hide" id="sb-1"><b>Funcao</b><small>AWS::Lambda::Function</small></div>
+    <div class="sbox gen hide" id="sb-2"><b>FuncaoRole</b><small>AWS::IAM::Role</small></div>
+    <div class="sbox gen hide" id="sb-3"><b>FuncaoSqs</b><small>AWS::Lambda::EventSourceMapping</small></div>
+  </div>
+  <div class="grid2">
+    <div><div class="hint">O que você escreveu (template.yaml)</div><div class="code" id="sam-in" style="max-height:380px"></div></div>
+    <div><div class="hint">O que o CloudFormation recebeu (template processado, resumido)</div><pre class="plain" id="sam-out" style="max-height:380px"></pre></div>
+  </div>
+  <table style="margin-top:10px">
+    <tr><th>Você escreveu</th><th>Virou</th></tr>
+    <tr><td><code>Policies:</code> com <code>DynamoDBCrudPolicy</code> e um <code>Statement</code></td><td>O role <code>FuncaoRole</code> com duas policies inline (<code>FuncaoRolePolicy0</code> e <code>1</code>) e duas gerenciadas que o SAM adiciona sozinho: <code>AWSLambdaBasicExecutionRole</code> (logs) e <code>AWSLambdaSQSQueueExecutionRole</code> (ler a fila).</td></tr>
+    <tr><td><code>Events: Sqs:</code></td><td><code>FuncaoSqs</code>, o "ouvinte" que lê a fila e chama a Lambda. O nome é nome da função + nome do evento.</td></tr>
+    <tr><td><code>CodeUri: .</code></td><td><code>Code: S3Bucket/S3Key</code>: o <code>sam deploy</code> zipou a pasta e mandou para um bucket do SAM.</td></tr>
+  </table>
+  <div class="note">Para ver o template processado do seu stack: <code>aws cloudformation get-template --stack-name whatsapp-atendente --template-stage Processed --region us-east-2</code></div>
+</section>
+
+<!-- 9 -->
+<section class="card" id="s9">
+  <h2><span class="num">09</span>Do <code>sam deploy</code> ao "no ar"</h2>
+  <p>O que acontece quando você roda <code>./deploy-lambda.sh</code> depois de mudar o <code>prompt.txt</code>. Avance pelas etapas.</p>
+  <div class="steps" id="steps"></div>
+  <div class="grid2">
+    <div class="panel" id="step-out"></div>
+    <pre class="plain" id="step-term" style="min-height:220px"></pre>
+  </div>
+  <div class="row" style="margin-top:10px"><button class="btn" id="st-prev">← Anterior</button><button class="btn primary" id="st-next">Próximo →</button></div>
+</section>
+
+<!-- 10 -->
+<section class="card" id="s10">
+  <h2><span class="num">10</span>E se eu mudar...?</h2>
+  <p>Cada propriedade tem um <b>comportamento de atualização</b> documentado. Ele diz o que o CloudFormation faz quando você muda aquela propriedade: atualiza no lugar, atualiza com uma breve interrupção, ou <b>substitui</b> o recurso (cria um novo e apaga o antigo). Escolha uma mudança:</p>
+  <div class="grid2">
+    <div class="upd-list" id="upd-list"></div>
+    <div>
+      <div class="meter"><div class="m-ok" id="m-ok">Sem interrupção</div><div class="m-warn" id="m-warn">Alguma interrupção</div><div class="m-bad" id="m-bad">Substituição</div></div>
+      <div class="rep" id="rep"></div>
+      <div class="panel" id="upd-out">Escolha uma mudança à esquerda.</div>
+    </div>
+  </div>
+  <div class="note"><b>Como saber antes de aplicar</b>O <code>sam deploy</code> mostra o change set com uma coluna <code>Replacement</code>. Se aparecer <code>True</code> num recurso com dados, pare e pense. Sem a flag <code>--no-confirm-changeset</code>, o SAM pergunta antes de executar.</div>
+</section>
+
+<!-- 11 -->
+<section class="card" id="s11">
+  <h2><span class="num">11</span>Proteger dados e o tal do drift</h2>
+  <h3>DeletionPolicy e UpdateReplacePolicy</h3>
+  <p>Sem nada dito, o CloudFormation <b>apaga</b> o recurso quando ele sai do stack. Hoje, um <code>sam delete</code> apagaria a sua <code>Tabela</code> com os alunos cadastrados. Dois atributos mudam isso:</p>
+  <table>
+    <tr><th>Atributo</th><th>Quando age</th><th>Valores</th></tr>
+    <tr><td><code>DeletionPolicy</code></td><td>O stack é apagado, ou o recurso é removido do template</td><td><code>Delete</code> (padrão), <code>Retain</code>, <code>RetainExceptOnCreate</code>, <code>Snapshot</code> (só em tipos com snapshot)</td></tr>
+    <tr><td><code>UpdateReplacePolicy</code></td><td>Uma atualização substitui o recurso por outro</td><td><code>Delete</code> (padrão), <code>Retain</code>, <code>Snapshot</code></td></tr>
+  </table>
+  <div class="grid2" style="margin-top:12px">
+    <div><div class="hint">Hoje</div><pre class="plain">  Tabela:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      ...</pre></div>
+    <div><div class="hint">Protegida (sugestão)</div><pre class="plain">  Tabela:
+    Type: AWS::DynamoDB::Table
+    <span class="t-tag">DeletionPolicy: Retain</span>
+    <span class="t-tag">UpdateReplacePolicy: Retain</span>
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      ...</pre></div>
+  </div>
+  <p class="hint">Repare que os dois ficam no mesmo nível de <code>Type</code>, não dentro de <code>Properties</code>. São atributos do recurso, não da tabela. Com <code>Retain</code>, o recurso sobra depois do delete e continua cobrando até você apagar na mão.</p>
+  <h3>Drift: quando alguém mexe pelo console</h3>
+  <p>Se você mudar o timeout da Lambda pelo console, o stack não fica sabendo. O template diz 60 s e a função real tem outro valor. Isso se chama <b>drift</b>. O template deixa de descrever o que está rodando, e quando um deploy futuro atualizar essa propriedade, a mudança manual é sobrescrita sem aviso.</p>
+  <div class="row"><button class="btn primary" id="drift-btn">▶ Ver o drift acontecendo</button></div>
+  <div class="grid2" style="margin-top:10px">
+    <div class="panel"><div class="hint">Template (o que o stack acha)</div><pre class="plain" id="drift-a">Funcao.Timeout: 60</pre></div>
+    <div class="panel"><div class="hint">Lambda real na AWS</div><pre class="plain" id="drift-b">Timeout: 60</pre></div>
+  </div>
+  <div class="panel" id="drift-out" style="margin-top:10px">Regra prática: o que nasceu pelo template, muda pelo template.</div>
+</section>
+
+<!-- 12 -->
+<section class="card" id="s12">
+  <h2><span class="num">12</span>Teste você</h2>
+  <p class="hint">8 perguntas sobre o seu próprio template. <span class="score" id="score"></span></p>
+  <div id="quiz"></div>
+</section>
+
+<!-- 13 -->
+<section class="card" id="s13">
+  <h2><span class="num">13</span>Cola rápida</h2>
+  <h3>Comandos para investigar o seu stack</h3>
+  <table>
+    <tr><th>Quero...</th><th>Comando</th></tr>
+    <tr><td>Status e saídas (Outputs)</td><td><code>aws cloudformation describe-stacks --stack-name whatsapp-atendente --region us-east-2</code></td></tr>
+    <tr><td>Linha do tempo (aba Events)</td><td><code>aws cloudformation describe-stack-events --stack-name whatsapp-atendente --region us-east-2</code></td></tr>
+    <tr><td>Nome lógico → nome físico</td><td><code>aws cloudformation list-stack-resources --stack-name whatsapp-atendente --region us-east-2</code></td></tr>
+    <tr><td>Template depois do SAM</td><td><code>aws cloudformation get-template --stack-name whatsapp-atendente --template-stage Processed --region us-east-2</code></td></tr>
+    <tr><td>Validar antes de subir</td><td><code>sam validate --lint</code></td></tr>
+    <tr><td>Procurar drift</td><td><code>aws cloudformation detect-stack-drift --stack-name whatsapp-atendente --region us-east-2</code></td></tr>
+    <tr><td>Subir mudança</td><td><code>./deploy-lambda.sh</code> (em <code>whatsapp/infra</code>)</td></tr>
+    <tr><td>Apagar tudo</td><td><code>./99-destroy.sh</code> (chama <code>sam delete</code> e remove o que está fora do stack)</td></tr>
+  </table>
+  <h3>Glossário</h3>
+  <table id="gloss"></table>
+  <h3>Fontes (documentação oficial da AWS)</h3>
+  <ul class="hint" style="line-height:1.9">
+    <li><a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/Welcome.html">What is CloudFormation?</a></li>
+    <li><a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/transform-section-structure.html">Template Transform section</a></li>
+    <li><a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-sqs-queue.html">AWS::SQS::Queue (Return values: Ref = URL, GetAtt Arn)</a> · <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-sns-topic.html">AWS::SNS::Topic</a> · <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-dynamodb-table.html">AWS::DynamoDB::Table</a> · <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-lambda-function.html">AWS::Lambda::Function</a></li>
+    <li><a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/stack-resource-configuration-complete.html">Understand CloudFormation stack creation events (CONFIGURATION_COMPLETE)</a></li>
+    <li><a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-updating-stacks-update-behaviors.html">Update behaviors of stack resources</a> · <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-updating-stacks-changesets.html">Change sets</a></li>
+    <li><a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-deletionpolicy.html">DeletionPolicy</a> · <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-updatereplacepolicy.html">UpdateReplacePolicy</a> · <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-stack-drift.html">Drift detection</a></li>
+    <li><a href="https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-specification-generated-resources-function.html">SAM: recursos gerados por AWS::Serverless::Function</a></li>
+    <li><a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/view-stack-events.html">Stack status codes (ROLLBACK_COMPLETE, UPDATE_COMPLETE_CLEANUP_IN_PROGRESS)</a></li>
+  </ul>
+</section>
+</main>
+</div>
+
+<!-- template real -->
+<script type="text/plain" id="tpl">AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Atendente de WhatsApp com Amazon Bedrock (SNS -> SQS -> Lambda)
+
+Parameters:
+  KbId:
+    Type: String
+    Description: ID do Knowledge Base
+  GuardrailId:
+    Type: String
+    Default: "off"
+  GuardrailVersion:
+    Type: String
+    Default: DRAFT
+  ModelId:
+    Type: String
+    Default: us.anthropic.claude-sonnet-4-6
+
+Resources:
+  # Tabela única: CONVERSA#, MSG#, ALUNO#
+  Tabela:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - { AttributeName: pk, AttributeType: S }
+      KeySchema:
+        - { AttributeName: pk, KeyType: HASH }
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+
+  # O End User Messaging Social publica aqui (tópico padrão; FIFO não é suportado).
+  # Ao ligar "Message and event publishing" no console, escolha este tópico.
+  Topico:
+    Type: AWS::SNS::Topic
+
+  # Permite que o End User Messaging Social publique no tópico.
+  TopicoPolicy:
+    Type: AWS::SNS::TopicPolicy
+    Properties:
+      Topics: [!Ref Topico]
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: PermitirEndUserMessagingSocial
+            Effect: Allow
+            Principal: { Service: social-messaging.amazonaws.com }
+            Action: sns:Publish
+            Resource: !Ref Topico
+            Condition:
+              StringEquals: { "aws:SourceAccount": !Ref AWS::AccountId }
+
+  Dlq:
+    Type: AWS::SQS::Queue
+    Properties:
+      MessageRetentionPeriod: 1209600
+
+  Fila:
+    Type: AWS::SQS::Queue
+    Properties:
+      # >= 6x o timeout da Lambda (recomendação da AWS)
+      VisibilityTimeout: 360
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt Dlq.Arn
+        maxReceiveCount: 5
+
+  FilaPolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues: [!Ref Fila]
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal: { Service: sns.amazonaws.com }
+            Action: sqs:SendMessage
+            Resource: !GetAtt Fila.Arn
+            Condition:
+              ArnEquals: { "aws:SourceArn": !Ref Topico }
+
+  Assinatura:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref Topico
+      Protocol: sqs
+      Endpoint: !GetAtt Fila.Arn
+
+  Funcao:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handler.handler
+      Runtime: nodejs22.x
+      Architectures: [arm64]
+      # RAG + até 5 chamadas Converse (loop de tools) cabem mal em 30 s
+      Timeout: 60
+      MemorySize: 512
+      # Limita chamadas simultâneas ao Bedrock (cota de requisições por minuto)
+      ReservedConcurrentExecutions: 10
+      Environment:
+        Variables:
+          TABELA: !Ref Tabela
+          KB_ID: !Ref KbId
+          MODEL_ID: !Ref ModelId
+          GUARDRAIL_ID: !Ref GuardrailId
+          GUARDRAIL_VERSION: !Ref GuardrailVersion
+          LOCK_SEG: "60"
+      Policies:
+        - DynamoDBCrudPolicy: { TableName: !Ref Tabela }
+        - Statement:
+            - Effect: Allow
+              Action: [bedrock:InvokeModel]
+              Resource:
+                - !Sub arn:aws:bedrock:*:${AWS::AccountId}:inference-profile/*
+                - arn:aws:bedrock:*::foundation-model/*
+            - Effect: Allow
+              Action: [bedrock:Retrieve]
+              Resource: !Sub arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:knowledge-base/${KbId}
+            # O guardrail usa tier STANDARD (português), que roda via perfil cross-region:
+            # além do guardrail, precisa do guardrail-profile em cada região de destino.
+            - Effect: Allow
+              Action: [bedrock:ApplyGuardrail]
+              Resource:
+                - !Sub arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:guardrail/*
+                - !Sub arn:aws:bedrock:us-east-1:${AWS::AccountId}:guardrail-profile/us.guardrail.v1:0
+                - !Sub arn:aws:bedrock:us-east-2:${AWS::AccountId}:guardrail-profile/us.guardrail.v1:0
+                - !Sub arn:aws:bedrock:us-west-2:${AWS::AccountId}:guardrail-profile/us.guardrail.v1:0
+            - Effect: Allow
+              Action: [social-messaging:SendWhatsAppMessage]
+              Resource: "*"
+      Events:
+        Sqs:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt Fila.Arn
+            BatchSize: 5
+            FunctionResponseTypes: [ReportBatchItemFailures]
+
+Outputs:
+  TopicoArn:
+    Value: !Ref Topico
+  DlqUrl:
+    Value: !Ref Dlq</script>
+
+<!-- template processado (real, resumido) -->
+<script type="text/plain" id="processed">Funcao:
+  Type: AWS::Lambda::Function
+  Properties:
+    Code:
+      S3Bucket: aws-sam-cli-managed-default-samclisourcebucket-xjbgf1nzlecg
+      S3Key: becd79bca2653d17aa9cb7e3f0661b6f
+    Handler: src/handler.handler
+    Runtime: nodejs22.x
+    Architectures: [arm64]
+    MemorySize: 512
+    Timeout: 60
+    ReservedConcurrentExecutions: 10
+    Role: { Fn::GetAtt: [FuncaoRole, Arn] }      # <- liga no role gerado
+    Environment: { ... igual ao original ... }
+    Tags: [{ Key: lambda:createdBy, Value: SAM }]
+
+FuncaoRole:                                       # <- gerado pelo SAM
+  Type: AWS::IAM::Role
+  Properties:
+    AssumeRolePolicyDocument:
+      Statement:
+        - Effect: Allow
+          Principal: { Service: [lambda.amazonaws.com] }
+          Action: [sts:AssumeRole]
+    ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaSQSQueueExecutionRole
+    Policies:
+      - PolicyName: FuncaoRolePolicy0   # DynamoDBCrudPolicy expandida
+      - PolicyName: FuncaoRolePolicy1   # o seu Statement do Bedrock/WhatsApp
+
+FuncaoSqs:                                        # <- gerado pelo SAM
+  Type: AWS::Lambda::EventSourceMapping
+  Properties:
+    EventSourceArn: { Fn::GetAtt: [Fila, Arn] }
+    FunctionName: { Ref: Funcao }
+    BatchSize: 5
+    FunctionResponseTypes: [ReportBatchItemFailures]</script>
+
+<script>
+const $ = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => [...r.querySelectorAll(s)];
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+/* tema */
+const root = document.documentElement;
+const pref = localStorage.getItem('cfn-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+root.dataset.theme = pref;
+$('#theme').onclick = () => { root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark'; localStorage.setItem('cfn-theme', root.dataset.theme); };
+
+/* índice ativo */
+const secs = $$('main section');
+const tocLinks = $$('#toc a');
+const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) tocLinks.forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + e.target.id)); }), { rootMargin: '-40% 0px -55% 0px' });
+secs.forEach(x => io.observe(x));
+
+/* ── realce de YAML ─────────────────────────────────────────── */
+function fmtSeg(seg, atStart) {
+  let h = esc(seg);
+  if (atStart) h = h.replace(/^(\s*-?\s*)([A-Za-z0-9_:.]+)(:)(?=\s|$)/, '$1<span class="t-k">$2</span>$3');
+  h = h.replace(/(\{\s*|,\s*)([A-Za-z][A-Za-z0-9_]*)(:)(?=\s)/g, '$1<span class="t-k">$2</span>$3');
+  h = h.replace(/(!Ref|!GetAtt|!Sub)\b/g, '<span class="t-tag">$1</span>');
+  h = h.replace(/(:\s)(\d+)(\s*)$/, '$1<span class="t-n">$2</span>$3');
+  return h;
+}
+function hlLine(line) {
+  if (/^\s*#/.test(line)) return '<span class="t-c">' + esc(line) + '</span>';
+  let comment = '';
+  const ci = line.indexOf(' # ');
+  if (ci >= 0) { comment = line.slice(ci); line = line.slice(0, ci); }
+  let out = '', last = 0, m; const re = /"[^"]*"/g;
+  while ((m = re.exec(line))) { out += fmtSeg(line.slice(last, m.index), last === 0) + '<span class="t-s">' + esc(m[0]) + '</span>'; last = re.lastIndex; }
+  out += fmtSeg(line.slice(last), last === 0);
+  return out + (comment ? '<span class="t-c">' + esc(comment) + '</span>' : '');
+}
+const TPL = $('#tpl').textContent.replace(/^\n/, '');
+const LINES = TPL.split('\n');
+function renderCode(el, lines, startNum = 1) {
+  el.innerHTML = lines.map((l, i) => `<div class="ln" data-i="${i}"><span class="n">${i + startNum}</span><span>${hlLine(l) || ' '}</span></div>`).join('');
+}
+function highlight(el, from, to, dimOthers = false) {
+  $$('.ln', el).forEach(d => {
+    const i = +d.dataset.i, on = i >= from && i <= to;
+    d.classList.toggle('hl', on); d.classList.toggle('dim', dimOthers && !on);
+  });
+  const first = el.querySelector(`.ln[data-i="${from}"]`);
+  if (first) el.scrollTo({ top: first.offsetTop - el.offsetTop - 30, behavior: 'smooth' });
+}
+function topRange(key) {
+  const s = LINES.findIndex(l => l.startsWith(key + ':'));
+  let e = s + 1;
+  while (e < LINES.length && !/^\S/.test(LINES[e])) e++;
+  e--; while (e > s && LINES[e].trim() === '') e--;
+  return [s, e];
+}
+function resRange(name) {
+  let s = LINES.findIndex(l => l === '  ' + name + ':');
+  let e = s + 1;
+  while (e < LINES.length && !/^  [A-Za-z]/.test(LINES[e]) && !/^\S/.test(LINES[e])) e++;
+  e--; while (e > s && (LINES[e].trim() === '' || /^  #/.test(LINES[e]))) e--;
+  while (s > 0 && /^  #/.test(LINES[s - 1])) s--;
+  return [s, e];
+}
+
+/* ── 1. analogia ─────────────────────────────────────────────── */
+const ANALOG = {
+  tpl: ['📐 Template = planta da casa', 'O arquivo <code>whatsapp/template.yaml</code>. Ele descreve <b>o que</b> deve existir (uma tabela, um tópico, duas filas, uma função), e não os passos para criar. Você entrega a planta; não dá ordens de "primeiro levante esta parede".'],
+  cfn: ['👷 CloudFormation = mestre de obras', 'Lê a planta, descobre a ordem certa sozinho (não dá para pôr o telhado antes das paredes), chama os serviços da AWS para criar cada peça, e acompanha. Se uma peça falha, desfaz o que já tinha feito naquela obra. É um serviço da AWS, gratuito: você paga só pelos recursos que ele cria.'],
+  stack: ['🏠 Stack = a casa construída', 'O conjunto de recursos criados a partir de um template, gerenciados juntos. O seu se chama <code>whatsapp-atendente</code>. O stack também guarda o "estado": a lista de quais recursos reais pertencem a ele. Apagar o stack apaga a casa inteira.'],
+  cs: ['🧾 Change set = orçamento da reforma', 'Quando você muda a planta, o mestre de obras primeiro apresenta o orçamento: "vou mexer na Funcao; nada será demolido". Só depois que você aprova ele executa. É o equivalente do <code>terraform plan</code>. O <code>sam deploy</code> cria e mostra esse change set a cada deploy.'],
+};
+$$('#analog .an').forEach(a => a.onclick = () => {
+  $$('#analog .an').forEach(x => x.classList.toggle('on', x === a));
+  const [t, b] = ANALOG[a.dataset.k]; $('#analog-out').innerHTML = `<b>${t}</b><p style="margin:6px 0 0">${b}</p>`;
+});
+$('#analog .an').click();
+
+/* ── 2. terraform ────────────────────────────────────────────── */
+const TF = [
+  ['resource "aws_sqs_queue" "fila"', 'Resources: Fila: Type: AWS::SQS::Queue', 'Fila, Dlq, Topico...', 'resource "aws_sqs_queue" "fila" {\n  visibility_timeout_seconds = 360\n}', 'Fila:\n  Type: AWS::SQS::Queue\n  Properties:\n    VisibilityTimeout: 360'],
+  ['aws_sqs_queue.fila.arn', '!GetAtt Fila.Arn', 'Assinatura.Endpoint', 'endpoint = aws_sqs_queue.fila.arn', 'Endpoint: !GetAtt Fila.Arn'],
+  ['aws_sqs_queue.fila.id (URL)', '!Ref Fila', 'FilaPolicy.Queues', 'queue_url = aws_sqs_queue.fila.id', 'Queues: [!Ref Fila]'],
+  ['variable "kb_id"', 'Parameters: KbId', 'KbId, GuardrailId...', 'variable "kb_id" {\n  type = string\n}\n# uso: var.kb_id', 'Parameters:\n  KbId:\n    Type: String\n# uso: !Ref KbId'],
+  ['-var kb_id=...', '--parameter-overrides KbId=...', 'deploy-lambda.sh', 'terraform apply -var kb_id=EGLPNPMCWH', 'sam deploy --parameter-overrides KbId=EGLPNPMCWH'],
+  ['output "topico_arn"', 'Outputs: TopicoArn', 'TopicoArn, DlqUrl', 'output "topico_arn" {\n  value = aws_sns_topic.topico.arn\n}', 'Outputs:\n  TopicoArn:\n    Value: !Ref Topico'],
+  ['terraform plan', 'change set', 'a tabela que o sam deploy mostra', 'terraform plan\n# ~ update in-place\n# -/+ destroy and then create', 'sam deploy\n# Operation  LogicalResourceId  Replacement\n# * Modify   Funcao             False'],
+  ['terraform apply', 'executar o change set', 'sam deploy (sem perguntar)', 'terraform apply', 'aws cloudformation execute-change-set ...\n# (o sam deploy faz isso por você)'],
+  ['terraform.tfstate', 'o stack (guardado pela AWS)', 'whatsapp-atendente', '# arquivo local ou em S3 + lock no DynamoDB\nterraform.tfstate', '# não há arquivo: o estado é o stack\naws cloudformation list-stack-resources \\\n  --stack-name whatsapp-atendente'],
+  ['module', 'Transform/macro (SAM) ou nested stack', 'AWS::Serverless::Function', 'module "lambda" {\n  source = "..."\n}  # vira vários resources', 'Transform: AWS::Serverless-2016-10-31\nFuncao:\n  Type: AWS::Serverless::Function\n# vira Function + Role + EventSourceMapping'],
+  ['depends_on', 'DependsOn', 'não usado (tudo é implícito)', 'depends_on = [aws_sqs_queue.dlq]', 'DependsOn: Dlq'],
+  ['terraform destroy', 'delete-stack / sam delete', '99-destroy.sh', 'terraform destroy', 'sam delete --stack-name whatsapp-atendente'],
+  ['prevent_destroy', 'DeletionPolicy: Retain', 'sugestão para a Tabela', 'lifecycle {\n  prevent_destroy = true\n}', 'Tabela:\n  Type: AWS::DynamoDB::Table\n  DeletionPolicy: Retain'],
+];
+$('#tf tbody').innerHTML = TF.map((r, i) => `<tr class="tf-row" data-i="${i}"><td><code>${esc(r[0])}</code></td><td><code>${esc(r[1])}</code></td><td>${esc(r[2])}</td></tr>`).join('');
+$$('.tf-row').forEach(tr => tr.onclick = () => {
+  $$('.tf-row').forEach(x => x.classList.toggle('on', x === tr));
+  const r = TF[+tr.dataset.i]; $('#tf-l').textContent = r[3]; $('#tf-r').textContent = r[4];
+});
+$('.tf-row').click();
+
+/* ── 3. anatomia ─────────────────────────────────────────────── */
+renderCode($('#code-main'), LINES);
+const SECTIONS = [
+  ['AWSTemplateFormatVersion', false, 'Versão do <b>formato</b> do template. Só existe um valor válido: <code>2010-09-09</code>. Não tem a ver com a data do seu projeto. É opcional, mas todo mundo coloca.'],
+  ['Transform', false, 'Liga macros que reescrevem o template antes do deploy. <code>AWS::Serverless-2016-10-31</code> é o <b>SAM</b>: permite usar tipos curtos como <code>AWS::Serverless::Function</code>. Veja a seção 8.'],
+  ['Description', false, 'Texto livre que aparece no console do CloudFormation ao lado do stack. Só documentação.'],
+  ['Parameters', false, 'As <b>entradas</b> do template, como as <code>variable</code> do Terraform. Aqui são 4: o ID do Knowledge Base (obrigatório, sem <code>Default</code>), o guardrail, a versão dele e o modelo. Os valores chegam no deploy por <code>--parameter-overrides</code>, e o stack guarda o último valor usado. Dentro do template você lê com <code>!Ref KbId</code>.'],
+  ['Resources', true, '<b>A única seção obrigatória.</b> Cada item é algo que vai existir na AWS. São 8 aqui: Tabela, Topico, TopicoPolicy, Dlq, Fila, FilaPolicy, Assinatura e Funcao (que o SAM transforma em 3).'],
+  ['Outputs', false, 'Valores que o stack <b>devolve</b> depois de criado, para você ou para scripts. O <code>05-deploy-stack.sh</code> lê o <code>TopicoArn</code> daqui, e foi esse ARN que você colou no console do WhatsApp. Um Output pode ser exportado (<code>Export</code>) para outro stack usar.'],
+];
+const NOTUSED = '<p class="hint" style="margin-top:10px">Seções que existem mas este template não usa: <code>Metadata</code>, <code>Rules</code>, <code>Mappings</code> (tabelas de consulta, ex.: um valor por região) e <code>Conditions</code> (criar um recurso só se, por exemplo, o ambiente for produção).</p>';
+$('#sec-chips').innerHTML = SECTIONS.map((s, i) => `<button class="chip" data-i="${i}">${s[0]}${s[1] ? '<span class="opt">obrigatória</span>' : ''}</button>`).join('');
+$$('#sec-chips .chip').forEach(c => c.onclick = () => {
+  $$('#sec-chips .chip').forEach(x => x.classList.toggle('on', x === c));
+  const s = SECTIONS[+c.dataset.i]; const [a, b] = topRange(s[0]);
+  highlight($('#code-main'), a, b, true);
+  $('#sec-out').innerHTML = `<div class="eyebrow">${s[1] ? 'obrigatória' : 'opcional'} · linhas ${a + 1}–${b + 1}</div><h3 style="margin-top:4px">${s[0]}</h3><p>${s[2]}</p>${NOTUSED}`;
+});
+$('#sec-chips .chip[data-i="4"]').click();
+
+/* ── 4. recurso por dentro ───────────────────────────────────── */
+const ANAT_HTML = `  <span data-p="logical">Fila</span>:
+    <span data-p="type">Type: AWS::SQS::Queue</span>
+    <span data-p="props">Properties:
+      VisibilityTimeout: 360
+      RedrivePolicy:
+        deadLetterTargetArn: <span data-p="tag">!GetAtt Dlq.Arn</span>
+        maxReceiveCount: 5</span>`;
+$('#anat').innerHTML = ANAT_HTML;
+const ANAT = {
+  logical: ['Nome lógico: <code>Fila</code>', 'O apelido que <b>você</b> escolhe, válido só dentro do template. É por ele que os outros recursos se referem a este (<code>!Ref Fila</code>). Se você renomear o nome lógico, o CloudFormation entende que um recurso sumiu e outro apareceu: apaga a fila antiga e cria uma nova.'],
+  type: ['Type: <code>AWS::SQS::Queue</code>', 'O tipo do recurso, no formato <code>AWS::Serviço::Coisa</code>. Ele define quais Properties existem e o que o Ref devolve. Cada tipo tem uma página na "CloudFormation Template Reference".'],
+  props: ['Properties', 'A configuração do recurso. O que você não informa fica com o valor padrão do serviço. Aqui: a mensagem fica invisível por 360 s depois de lida (tempo para a Lambda processar), e após 5 tentativas vai para a DLQ.'],
+  tag: ['<code>!GetAtt Dlq.Arn</code>', 'Uma referência a outro recurso. Além de buscar o valor, ela cria uma <b>dependência</b>: o CloudFormation só começa a Fila depois que a Dlq estiver configurada. Veja a seção 7.'],
+};
+function anat(k) {
+  $$('#anat [data-p]').forEach(s => s.style.cssText = s.dataset.p === k ? 'background:rgba(245,184,65,.25);outline:1px solid #F5B841;border-radius:4px' : '');
+  $$('[data-anat]').forEach(b => b.classList.toggle('on', b.dataset.anat === k));
+  const [t, b] = ANAT[k]; $('#anat-out').innerHTML = `<b>${t}</b><p style="margin:6px 0 0">${b}</p>`;
+}
+$$('[data-anat]').forEach(b => b.onclick = () => anat(b.dataset.anat));
+$$('#anat [data-p]').forEach(s => { s.style.cursor = 'pointer'; s.onmouseenter = e => { e.stopPropagation(); anat(s.dataset.p); }; });
+const PHYS = [
+  ['Tabela', 'whatsapp-atendente-Tabela-97SLY3AFJ0ZM', 'nome da tabela'],
+  ['Topico', 'arn:aws:sns:us-east-2:123456789012:whatsapp-atendente-Topico-wTnzo9YqPN7e', 'ARN do tópico'],
+  ['Fila', 'https://sqs.us-east-2.amazonaws.com/123456789012/whatsapp-atendente-Fila-QP7Lduitmk61', 'URL da fila'],
+  ['Dlq', 'https://sqs.us-east-2.amazonaws.com/123456789012/whatsapp-atendente-Dlq-8WWXCIxUGUOr', 'URL da DLQ'],
+  ['Funcao', 'whatsapp-atendente-Funcao-tEGaG2pj475q', 'nome da função'],
+];
+$('#phys-btn').onclick = () => {
+  $('#phys').innerHTML = '<table><tr><th>Nome lógico (template)</th><th></th><th>ID físico (AWS)</th></tr>' + PHYS.map((p, i) => `<tr style="opacity:0;transition:opacity .4s ${i * .25}s" class="ph"><td><code>${p[0]}</code></td><td>⟶</td><td><code style="word-break:break-all">${p[1]}</code> <span class="hint">${p[2]}</span></td></tr>`).join('') + '</table><p class="hint" style="margin-top:6px">Padrão: <code>&lt;stack&gt;-&lt;nome lógico&gt;-&lt;sufixo&gt;</code>. Você pode fixar o nome (ex.: <code>QueueName</code>), mas aí perde a liberdade de substituir o recurso sem conflito de nome.</p>';
+  requestAnimationFrame(() => $$('.ph').forEach(r => r.style.opacity = 1));
+};
+
+/* ── 5. recurso a recurso ────────────────────────────────────── */
+const RES = {
+  Topico: { t: 'AWS::SNS::Topic', what: 'Um tópico do SNS: um "alto-falante" onde alguém publica e todos os assinantes recebem.', why: 'O End User Messaging Social (WhatsApp) só sabe publicar em <b>tópico SNS padrão</b>. Ele é a porta de entrada das mensagens dos clientes.', key: ['Não tem Properties: tudo no padrão. O nome é gerado.', 'O ARN dele vira o Output <code>TopicoArn</code>, que você colou no console do WhatsApp.'], tf: 'resource "aws_sns_topic" "topico" {}' },
+  TopicoPolicy: { t: 'AWS::SNS::TopicPolicy', what: 'A "lista de convidados" do tópico: quem pode publicar nele.', why: 'Sem ela, o serviço do WhatsApp recebe acesso negado ao publicar. É uma <b>resource policy</b>: fica grudada no recurso, e não num usuário.', key: ['<code>Principal: social-messaging.amazonaws.com</code>: quem pode.', '<code>Action: sns:Publish</code>: o que pode.', '<code>Condition aws:SourceAccount</code>: só se o pedido vier da sua conta (evita que outra conta use o serviço para publicar no seu tópico).'], tf: 'resource "aws_sns_topic_policy" "p" {\n  arn    = aws_sns_topic.topico.arn\n  policy = jsonencode({ ... })\n}' },
+  Dlq: { t: 'AWS::SQS::Queue', what: 'Uma fila SQS usada como "caixa de mensagens problemáticas" (dead-letter queue).', why: 'Mensagem que falha 5 vezes sai da fila principal e vem para cá, em vez de ficar travando o processamento ou se perder.', key: ['<code>MessageRetentionPeriod: 1209600</code> = 14 dias, o máximo do SQS. Dá tempo de investigar.'], tf: 'resource "aws_sqs_queue" "dlq" {\n  message_retention_seconds = 1209600\n}' },
+  Fila: { t: 'AWS::SQS::Queue', what: 'A fila principal: guarda as mensagens até a Lambda processar.', why: 'Amortece picos e dá retry automático. Se a Lambda falhar, a mensagem volta para a fila e é tentada de novo.', key: ['<code>VisibilityTimeout: 360</code>: depois de lida, a mensagem fica invisível por 6 min. A AWS recomenda ≥ 6× o timeout da Lambda (60 s).', '<code>RedrivePolicy</code>: depois de <code>maxReceiveCount: 5</code> tentativas, manda para a <code>Dlq</code> (via <code>!GetAtt Dlq.Arn</code>).'], tf: 'resource "aws_sqs_queue" "fila" {\n  visibility_timeout_seconds = 360\n  redrive_policy = jsonencode({\n    deadLetterTargetArn = aws_sqs_queue.dlq.arn\n    maxReceiveCount     = 5\n  })\n}' },
+  FilaPolicy: { t: 'AWS::SQS::QueuePolicy', what: 'A lista de convidados da fila: quem pode colocar mensagem nela.', why: 'O SNS precisa de permissão para entregar na fila. A condição garante que só o <b>seu</b> tópico pode.', key: ['<code>Queues: [!Ref Fila]</code>: aqui o Ref devolve a URL, que é o que esta propriedade pede.', '<code>Resource: !GetAtt Fila.Arn</code>: já a policy pede o ARN.', '<code>ArnEquals aws:SourceArn: !Ref Topico</code>: só mensagens vindas deste tópico.'], tf: 'resource "aws_sqs_queue_policy" "p" {\n  queue_url = aws_sqs_queue.fila.id\n  policy    = jsonencode({ ... })\n}' },
+  Assinatura: { t: 'AWS::SNS::Subscription', what: 'O "cabo" que liga o tópico à fila.', why: 'Sem a assinatura, o tópico recebe as mensagens do WhatsApp e não entrega a ninguém.', key: ['<code>TopicArn: !Ref Topico</code> (Ref do tópico = ARN).', '<code>Protocol: sqs</code> e <code>Endpoint: !GetAtt Fila.Arn</code>.', 'Sem <code>RawMessageDelivery</code>, a mensagem chega embrulhada no envelope do SNS. Por isso o <code>parseEvent.mjs</code> desembrulha o campo <code>Message</code>.'], tf: 'resource "aws_sns_topic_subscription" "s" {\n  topic_arn = aws_sns_topic.topico.arn\n  protocol  = "sqs"\n  endpoint  = aws_sqs_queue.fila.arn\n}' },
+  Tabela: { t: 'AWS::DynamoDB::Table', what: 'Uma tabela DynamoDB, que guarda histórico, lock, idempotência e alunos.', why: 'A Lambda não guarda nada entre execuções. A tabela é a memória do atendente.', key: ['<code>BillingMode: PAY_PER_REQUEST</code>: paga por uso, sem capacidade reservada.', '<code>AttributeDefinitions</code> declara só os atributos usados em chave; <code>KeySchema</code> diz que <code>pk</code> é a chave de partição (HASH).', '<code>TimeToLiveSpecification</code>: itens com o atributo <code>ttl</code> no passado são apagados sozinhos.', 'Sem <code>DeletionPolicy</code>: um <code>sam delete</code> apaga a tabela e os dados (seção 11).'], tf: 'resource "aws_dynamodb_table" "t" {\n  billing_mode = "PAY_PER_REQUEST"\n  hash_key     = "pk"\n  attribute { name = "pk", type = "S" }\n  ttl { attribute_name = "ttl", enabled = true }\n}' },
+  Funcao: { t: 'AWS::Serverless::Function', what: 'A função Lambda com o seu código (<code>src/</code> + <code>prompt.txt</code>).', why: 'É o atendente: lê a fila, chama KB, Bedrock e guardrail, e responde no WhatsApp.', key: ['Tipo do <b>SAM</b>: vira 3 recursos (seção 8).', '<code>CodeUri: .</code>: o SAM zipa a pasta e sobe para o S3.', '<code>Environment.Variables</code>: é assim que o código descobre o nome real da tabela (<code>!Ref Tabela</code>) e o ID do KB (<code>!Ref KbId</code>).', '<code>Policies</code>: viram o role IAM da função. <code>DynamoDBCrudPolicy</code> é um "policy template" pronto do SAM.', '<code>Events.Sqs</code>: liga a fila na função, com <code>BatchSize: 5</code> e <code>ReportBatchItemFailures</code> (só as que falharam voltam).'], tf: '# no Terraform seriam 3+ resources:\nresource "aws_iam_role" "funcao" { ... }\nresource "aws_lambda_function" "funcao" { ... }\nresource "aws_lambda_event_source_mapping" "sqs" {\n  event_source_arn = aws_sqs_queue.fila.arn\n  function_name    = aws_lambda_function.funcao.arn\n  batch_size       = 5\n}' },
+};
+const ORDER = ['Topico', 'TopicoPolicy', 'Assinatura', 'Fila', 'FilaPolicy', 'Dlq', 'Funcao', 'Tabela'];
+$('#res-chips').innerHTML = ORDER.map(n => `<button class="chip" data-n="${n}">${n}</button>`).join('');
+$$('#res-chips .chip').forEach(c => c.onclick = () => {
+  $$('#res-chips .chip').forEach(x => x.classList.toggle('on', x === c));
+  const n = c.dataset.n, r = RES[n], [a, b] = resRange(n);
+  renderCode($('#res-code'), LINES.slice(a, b + 1), a + 1);
+  $('#res-tf').textContent = r.tf;
+  $('#res-out').innerHTML = `<div class="eyebrow">${r.t}</div><h3 style="margin-top:4px">${n}</h3><p><b>O que é.</b> ${r.what}</p><p><b>Por que está aqui.</b> ${r.why}</p><b>O que olhar:</b><ul style="margin:6px 0 0;padding-left:20px">${r.key.map(k => `<li>${k}</li>`).join('')}</ul>`;
+});
+$('#res-chips .chip').click();
+
+/* ── 6. resolver ─────────────────────────────────────────────── */
+const EXPRS = [
+  ['!Ref Topico', 'arn:aws:sns:us-east-2:123456789012:whatsapp-atendente-Topico-wTnzo9YqPN7e', 'Ref de <b>tópico SNS</b> devolve o <b>ARN</b>. Usado na Assinatura, nas duas policies e no Output.'],
+  ['!Ref Fila', 'https://sqs.us-east-2.amazonaws.com/123456789012/whatsapp-atendente-Fila-QP7Lduitmk61', 'Ref de <b>fila SQS</b> devolve a <b>URL</b>, não o ARN. Serve para <code>Queues:</code> da FilaPolicy, que pede URL.'],
+  ['!GetAtt Fila.Arn', 'arn:aws:sqs:us-east-2:123456789012:whatsapp-atendente-Fila-QP7Lduitmk61', 'Quando precisa do ARN da fila (policy, assinatura, evento da Lambda), usa GetAtt. A fila também oferece <code>QueueName</code> e <code>QueueUrl</code>.'],
+  ['!GetAtt Dlq.Arn', 'arn:aws:sqs:us-east-2:123456789012:whatsapp-atendente-Dlq-8WWXCIxUGUOr', 'A RedrivePolicy da Fila exige o ARN da DLQ. Por causa desta referência, a Dlq é criada antes da Fila.'],
+  ['!Ref Tabela', 'whatsapp-atendente-Tabela-97SLY3AFJ0ZM', 'Ref de <b>tabela DynamoDB</b> devolve o <b>nome</b>. Vai para a variável <code>TABELA</code> da Lambda e para a <code>DynamoDBCrudPolicy</code>.'],
+  ['!Ref KbId', 'EGLPNPMCWH', 'Ref de um <b>parâmetro</b> devolve o valor recebido no deploy (<code>--parameter-overrides KbId=EGLPNPMCWH</code>).'],
+  ['!Ref GuardrailVersion', '1', 'O parâmetro tem <code>Default: DRAFT</code>, mas o deploy passou <code>1</code>. O valor passado vence o Default.'],
+  ['!Ref AWS::AccountId', '123456789012', 'Um <b>pseudo parâmetro</b>: existe sem declarar. Na TopicoPolicy, garante que só a sua conta publica.'],
+  ['!Sub arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:knowledge-base/${KbId}', 'arn:aws:bedrock:us-east-2:123456789012:knowledge-base/EGLPNPMCWH', '<code>!Sub</code> monta um texto trocando cada <code>${...}</code>: dois pseudo parâmetros e um parâmetro. Assim a permissão vale só para o seu KB.'],
+  ['!Ref Dlq   (no Output DlqUrl)', 'https://sqs.us-east-2.amazonaws.com/123456789012/whatsapp-atendente-Dlq-8WWXCIxUGUOr', 'Por isso o Output se chama <code>DlqUrl</code>: Ref de fila é URL. O <code>08-smoke-test.sh</code> usa essa URL para limpar a DLQ.'],
+];
+$('#exprs').innerHTML = EXPRS.map((e, i) => `<button class="expr" data-i="${i}">${hlLine(e[0])}</button>`).join('');
+$$('#exprs .expr').forEach(b => b.onclick = () => {
+  $$('#exprs .expr').forEach(x => x.classList.toggle('on', x === b));
+  const e = EXPRS[+b.dataset.i], out = $('#expr-val');
+  out.style.opacity = 0; setTimeout(() => { out.textContent = e[1]; out.style.opacity = 1; }, 180);
+  $('#expr-why').innerHTML = e[2];
+});
+$('#exprs .expr').click();
+
+/* ── 7. grafo + simulação ────────────────────────────────────── */
+const W = 172, H = 48;
+const NODES = {
+  Params: [20, 30, 'Parâmetros', 'KbId, GuardrailId…', true],
+  Tabela: [20, 120, 'Tabela', 'DynamoDB::Table'],
+  Topico: [20, 210, 'Topico', 'SNS::Topic'],
+  Dlq: [20, 300, 'Dlq', 'SQS::Queue'],
+  FuncaoRole: [275, 75, 'FuncaoRole', 'IAM::Role (SAM)'],
+  TopicoPolicy: [275, 165, 'TopicoPolicy', 'SNS::TopicPolicy'],
+  Fila: [275, 300, 'Fila', 'SQS::Queue'],
+  Funcao: [530, 75, 'Funcao', 'Lambda::Function'],
+  Assinatura: [530, 210, 'Assinatura', 'SNS::Subscription'],
+  FilaPolicy: [530, 300, 'FilaPolicy', 'SQS::QueuePolicy'],
+  FuncaoSqs: [790, 190, 'FuncaoSqs', 'EventSourceMapping (SAM)'],
+};
+const EDGES = [
+  ['Params', 'FuncaoRole', '!Sub ${KbId}'], ['Tabela', 'FuncaoRole', '!Ref'], ['Params', 'Funcao', '!Ref (env)'], ['Tabela', 'Funcao', '!Ref (env)'],
+  ['FuncaoRole', 'Funcao', 'GetAtt .Arn'], ['Topico', 'TopicoPolicy', '!Ref'], ['Topico', 'Assinatura', '!Ref'], ['Topico', 'FilaPolicy', '!Ref'],
+  ['Dlq', 'Fila', 'GetAtt .Arn'], ['Fila', 'Assinatura', 'GetAtt .Arn'], ['Fila', 'FilaPolicy', 'Ref + GetAtt'],
+  ['Funcao', 'FuncaoSqs', '!Ref'], ['Fila', 'FuncaoSqs', 'GetAtt .Arn'],
+];
+const svg = $('#graph'); const NS = 'http://www.w3.org/2000/svg';
+const mk = (t, a = {}, p = svg) => { const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); p.appendChild(e); return e; };
+const defs = mk('defs'); const mrk = mk('marker', { id: 'arr', viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: 'auto' }, defs);
+mk('path', { d: 'M0,0 L10,5 L0,10 z', fill: 'currentColor' }, mrk); mrk.style.color = 'var(--muted)';
+const edgeEls = EDGES.map(([a, b, l]) => {
+  const [ax, ay] = NODES[a], [bx, by] = NODES[b];
+  const x1 = ax + W, y1 = ay + H / 2, x2 = bx, y2 = by + H / 2, mx = (x1 + x2) / 2;
+  const p = mk('path', { d: `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2 - 2},${y2}`, class: 'gedge', 'marker-end': 'url(#arr)' });
+  const t = mk('text', { x: mx, y: (y1 + y2) / 2 - 4, 'text-anchor': 'middle', class: 'gedge-l' }); t.textContent = l; t.style.opacity = 0;
+  return { a, b, p, t };
+});
+const nodeEls = {};
+for (const [id, [x, y, label, ty, param]] of Object.entries(NODES)) {
+  const g = mk('g', { class: 'gnode' + (param ? ' param' : ''), transform: `translate(${x},${y})` });
+  mk('rect', { width: W, height: H, rx: 10 }, g);
+  const t1 = mk('text', { x: 12, y: 21 }, g); t1.textContent = label;
+  const t2 = mk('text', { x: 12, y: 37, class: 'ty' }, g); t2.textContent = ty;
+  g.style.cursor = 'pointer';
+  g.onmouseenter = () => focusNode(id); g.onmouseleave = () => focusNode(null);
+  nodeEls[id] = g;
+}
+function focusNode(id) {
+  for (const k in nodeEls) nodeEls[k].classList.toggle('focus', k === id);
+  edgeEls.forEach(e => { const on = id && (e.b === id); e.p.classList.toggle('focus', on); e.t.style.opacity = on ? 1 : 0; });
+}
+function setState(id, st) {
+  const g = nodeEls[id]; if (!g) return;
+  g.classList.remove('prog', 'cfg', 'done', 'fail', 'del', 'pulse');
+  if (st) g.classList.add(...st.split(' '));
+}
+const OK_EVENTS = [
+  [0, 'whatsapp-atendente', 'CREATE_IN_PROGRESS'], [0, 'Params', '(parâmetros resolvidos)'],
+  [1.6, 'Dlq', 'CREATE_IN_PROGRESS'], [1.6, 'Tabela', 'CREATE_IN_PROGRESS'], [1.7, 'Topico', 'CREATE_IN_PROGRESS'],
+  [2.9, 'Dlq', 'CONFIGURATION_COMPLETE'], [3.1, 'Topico', 'CREATE_COMPLETE'], [3.3, 'Fila', 'CREATE_IN_PROGRESS'],
+  [3.5, 'TopicoPolicy', 'CREATE_IN_PROGRESS'], [4.4, 'TopicoPolicy', 'CREATE_COMPLETE'], [4.5, 'Fila', 'CONFIGURATION_COMPLETE'],
+  [4.9, 'FilaPolicy', 'CREATE_IN_PROGRESS'], [4.9, 'Assinatura', 'CREATE_IN_PROGRESS'], [6.0, 'Assinatura', 'CREATE_COMPLETE'],
+  [15.3, 'Tabela', 'CREATE_COMPLETE'], [15.6, 'FuncaoRole', 'CREATE_IN_PROGRESS'], [33.1, 'FuncaoRole', 'CREATE_COMPLETE'],
+  [33.8, 'Funcao', 'CREATE_IN_PROGRESS'], [36.0, 'FilaPolicy', 'CREATE_COMPLETE'], [36.2, 'Funcao', 'CONFIGURATION_COMPLETE'],
+  [36.4, 'FuncaoSqs', 'CREATE_IN_PROGRESS'], [41.7, 'Funcao', 'CREATE_COMPLETE'], [49.0, 'FuncaoSqs', 'CREATE_COMPLETE'],
+  [64.1, 'Dlq', 'CREATE_COMPLETE'], [65.8, 'Fila', 'CREATE_COMPLETE'], [66.6, 'whatsapp-atendente', 'CREATE_COMPLETE'],
+];
+const FAIL_EVENTS = [
+  ...OK_EVENTS.filter(e => e[0] <= 15.6),
+  [17.0, 'FuncaoRole', 'CREATE_FAILED', 'User is not authorized to perform: iam:CreateRole (exemplo)'],
+  [17.4, 'whatsapp-atendente', 'ROLLBACK_IN_PROGRESS', 'The following resource(s) failed to create: [FuncaoRole]'],
+  [17.8, 'FilaPolicy', 'DELETE_IN_PROGRESS', 'criação cancelada'], [18.4, 'Assinatura', 'DELETE_IN_PROGRESS'], [18.4, 'TopicoPolicy', 'DELETE_IN_PROGRESS'],
+  [19.6, 'FilaPolicy', 'DELETE_COMPLETE'], [19.9, 'Assinatura', 'DELETE_COMPLETE'], [20.0, 'TopicoPolicy', 'DELETE_COMPLETE'],
+  [20.3, 'Fila', 'DELETE_IN_PROGRESS'], [20.3, 'Topico', 'DELETE_IN_PROGRESS'], [20.3, 'Tabela', 'DELETE_IN_PROGRESS'], [20.3, 'FuncaoRole', 'DELETE_COMPLETE'],
+  [21.5, 'Topico', 'DELETE_COMPLETE'], [24.0, 'Fila', 'DELETE_COMPLETE'], [24.4, 'Dlq', 'DELETE_IN_PROGRESS'],
+  [26.0, 'Tabela', 'DELETE_COMPLETE'], [27.2, 'Dlq', 'DELETE_COMPLETE'], [27.6, 'whatsapp-atendente', 'ROLLBACK_COMPLETE'],
+];
+let timer = null, speed = 6;
+$$('[data-speed]').forEach(b => b.onclick = () => { speed = +b.dataset.speed; $$('[data-speed]').forEach(x => x.classList.toggle('on', x === b)); });
+function cls(st) { return /FAILED/.test(st) ? 's-fail' : /ROLLBACK_COMPLETE|DELETE_COMPLETE/.test(st) ? 's-del' : /CONFIGURATION/.test(st) ? 's-cfg' : /COMPLETE|resolvidos/.test(st) ? 's-done' : /DELETE|ROLLBACK/.test(st) ? 's-fail' : 's-prog'; }
+function reset() {
+  clearInterval(timer); timer = null;
+  for (const k in nodeEls) setState(k, '');
+  $('#events').innerHTML = '<div class="hint" style="color:#7E8592">Aperte play para ver os eventos.</div>'; $('#clock').textContent = 't = 0,0 s';
+}
+function run(evs, isFail) {
+  reset(); $('#events').innerHTML = '';
+  let i = 0, t0 = performance.now();
+  $('#sim-note').innerHTML = isFail
+    ? '<b>O que aconteceu</b>Uma única falha (aqui, um exemplo de permissão negada ao criar o role) faz o CloudFormation <b>desfazer tudo</b> o que já tinha criado nesta operação. No fim, o stack fica em <code>ROLLBACK_COMPLETE</code>: não sobra nada pela metade, mas também não dá para atualizar esse stack. É preciso apagá-lo e criar de novo. Numa <b>atualização</b> que falha, ele volta à versão anterior (<code>UPDATE_ROLLBACK_COMPLETE</code>) e o stack continua utilizável.'
+    : '<b>Repare durante a animação</b>A <code>Fila</code> e a <code>Dlq</code> só chegam a <code>CREATE_COMPLETE</code> perto dos 65 s. Mesmo assim, a <code>Assinatura</code> e a <code>FilaPolicy</code> começam aos 5 s. Isso acontece porque o CloudFormation libera os dependentes quando o recurso atinge <code>CONFIGURATION_COMPLETE</code> (já configurado, ainda na checagem de consistência). Os 60 s restantes da fila são essa checagem. Repare também que Tabela, Topico e Dlq começam juntos: não dependem um do outro.';
+  timer = setInterval(() => {
+    const t = (performance.now() - t0) / 1000 * speed;
+    $('#clock').textContent = 't = ' + t.toFixed(1).replace('.', ',') + ' s';
+    while (i < evs.length && evs[i][0] <= t) {
+      const [et, id, st, why] = evs[i++];
+      if (id !== 'whatsapp-atendente') {
+        setState(id, /FAILED/.test(st) ? 'fail' : /DELETE_COMPLETE/.test(st) ? 'del' : /DELETE_IN/.test(st) ? 'prog pulse' : /CONFIGURATION/.test(st) ? 'cfg pulse' : /COMPLETE|resolvidos/.test(st) ? 'done' : 'prog pulse');
+      }
+      const box = $('#events');
+      box.insertAdjacentHTML('beforeend', `<div class="ev"><span style="color:#7E8592">+${et.toFixed(1)}s</span><span>${id === 'Params' ? 'Parameters' : id}</span><span class="${cls(st)}">${st}${why ? ` <span style="color:#9AA0AA">· ${why}</span>` : ''}</span></div>`);
+      box.scrollTop = box.scrollHeight;
+    }
+    if (i >= evs.length) { clearInterval(timer); timer = null; }
+  }, 50);
+}
+$('#sim-ok').onclick = () => run(OK_EVENTS, false);
+$('#sim-fail').onclick = () => run(FAIL_EVENTS, true);
+$('#sim-reset').onclick = reset;
+reset();
+
+/* ── 8. SAM ──────────────────────────────────────────────────── */
+const [fa, fb] = resRange('Funcao'); renderCode($('#sam-in'), LINES.slice(fa, fb + 1), fa + 1);
+$('#sam-out').innerHTML = $('#processed').textContent.split('\n').map(hlLine).join('\n');
+let samOn = false;
+$('#sam-btn').onclick = () => {
+  samOn = !samOn;
+  $('#sb-src').classList.toggle('hide', samOn);
+  ['#sb-1', '#sb-2', '#sb-3'].forEach((s, i) => setTimeout(() => $(s).classList.toggle('hide', !samOn), samOn ? 300 + i * 250 : 0));
+  $('#sam-arrow').textContent = samOn ? 'resultado do Transform:' : '⟶ macro AWS::Serverless ⟶';
+  $('#sam-btn').textContent = samOn ? '↺ Voltar ao original' : '▶ Aplicar o Transform';
+};
+
+/* ── 9. stepper ──────────────────────────────────────────────── */
+const STEPS = [
+  ['Editar', 'Você muda o <code>prompt.txt</code> (ou algo em <code>src/</code>). O template não mudou, mas o <b>código</b> da Funcao mudou.', '$ vim whatsapp/prompt.txt\n# Obs2 — APRESENTAÇÃO NA PRIMEIRA MENSAGEM...'],
+  ['sam build', 'O SAM copia o código e o <code>node_modules</code> para <code>.aws-sam/build/</code> e gera ali uma cópia do template apontando para essa pasta. Nada vai para a AWS ainda.', '$ sam build\nBuilding codeuri: . runtime: nodejs22.x\nRunning NodejsNpmBuilder:NpmPack\n...\nBuild Succeeded\nBuilt Artifacts  : .aws-sam/build'],
+  ['Upload', 'O <code>sam deploy</code> zipa a pasta da função e envia para um bucket S3 que o próprio SAM gerencia. No template enviado, <code>CodeUri: .</code> vira <code>S3Bucket + S3Key</code>. Como o zip mudou, a S3Key muda.', '$ ./deploy-lambda.sh\nUploading to becd79bca2653d17aa9cb7e3f0661b6f\n  bucket: aws-sam-cli-managed-default-samclisourcebucket-…'],
+  ['Change set', 'O CloudFormation compara o template novo com o stack atual e monta o "orçamento". Só a Funcao muda, e sem substituição. Na primeira criação o stack aparece como <code>REVIEW_IN_PROGRESS</code> nesta fase.', 'CloudFormation stack changeset\n-------------------------------------------------\nOperation   LogicalResourceId   ResourceType            Replacement\n-------------------------------------------------\n* Modify    Funcao              AWS::Lambda::Function   False\n-------------------------------------------------'],
+  ['Executar', 'O change set é executado. O CloudFormation chama a API do Lambda para trocar o código. Recursos que não mudaram nem são tocados.', 'UPDATE_IN_PROGRESS   whatsapp-atendente\nUPDATE_IN_PROGRESS   Funcao\nUPDATE_COMPLETE      Funcao'],
+  ['Limpeza', '<code>UPDATE_COMPLETE_CLEANUP_IN_PROGRESS</code>: fase em que o CloudFormation apaga o que ficou velho (relevante quando houve substituição). Depois, <code>UPDATE_COMPLETE</code>. A próxima mensagem já usa o prompt novo.', 'UPDATE_COMPLETE_CLEANUP_IN_PROGRESS  whatsapp-atendente\nUPDATE_COMPLETE                      whatsapp-atendente\n\nSuccessfully created/updated stack - whatsapp-atendente in us-east-2'],
+];
+let st = 0;
+$('#steps').innerHTML = STEPS.map((s, i) => `<div class="step" data-n="${i + 1}" data-i="${i}">${s[0]}</div>`).join('');
+function showStep(i) {
+  st = Math.max(0, Math.min(STEPS.length - 1, i));
+  $$('#steps .step').forEach((d, k) => { d.classList.toggle('on', k === st); d.classList.toggle('past', k < st); });
+  $('#step-out').innerHTML = `<div class="eyebrow">etapa ${st + 1} de ${STEPS.length}</div><h3 style="margin-top:4px">${STEPS[st][0]}</h3><p>${STEPS[st][1]}</p>`;
+  const term = $('#step-term'); term.textContent = ''; const txt = STEPS[st][2]; let k = 0;
+  clearInterval(term._t); term._t = setInterval(() => { term.textContent = txt.slice(0, k += 4); if (k >= txt.length) clearInterval(term._t); }, 12);
+  $('#st-prev').disabled = st === 0; $('#st-next').disabled = st === STEPS.length - 1;
+}
+$$('#steps .step').forEach(d => d.onclick = () => showStep(+d.dataset.i));
+$('#st-prev').onclick = () => showStep(st - 1); $('#st-next').onclick = () => showStep(st + 1);
+showStep(0);
+
+/* ── 10. update behaviors ────────────────────────────────────── */
+const UPD = [
+  ['Mudar o prompt.txt ou o código', 'ok', 'Funcao', 'A propriedade <code>Code</code> do <code>AWS::Lambda::Function</code> atualiza <b>sem interrupção</b>. A função continua a mesma (mesmo nome, mesmo ARN), só com código novo. É o que o <code>deploy-lambda.sh</code> faz.', null],
+  ['Timeout da Lambda 60 → 90', 'ok', 'Funcao', '<code>Timeout</code> e <code>MemorySize</code>: sem interrupção. Lembre de subir o <code>VisibilityTimeout</code> da fila junto (≥ 6× o timeout).', null],
+  ['VisibilityTimeout da fila 360 → 600', 'ok', 'Fila', '<code>VisibilityTimeout</code>: sem interrupção. As mensagens na fila continuam lá.', null],
+  ['Dar um nome fixo ao tópico (TopicName)', 'bad', 'Topico', '<code>TopicName</code> exige <b>substituição</b>: nasce um tópico novo com <b>ARN novo</b>. O CloudFormation atualiza sozinho quem usa <code>!Ref Topico</code> (Assinatura e policies). Mas o console do WhatsApp fica <b>fora do stack</b> e continua apontando para o ARN antigo, que foi apagado. As mensagens param de chegar até você trocar o destino lá.', ['Topico (ARN antigo)', 'Topico (ARN novo)']],
+  ['Dar um nome fixo à tabela (TableName)', 'bad', 'Tabela', '<code>TableName</code> exige <b>substituição</b>. A tabela nova nasce vazia e a antiga é apagada no fim do update. Você perde histórico e os alunos cadastrados. Para evitar: <code>UpdateReplacePolicy: Retain</code> (a antiga sobra) e migrar os dados. Veja a seção 11.', ['Tabela (com alunos)', 'Tabela (vazia)']],
+  ['Transformar a fila em FIFO (FifoQueue: true)', 'bad', 'Fila', '<code>FifoQueue</code> exige <b>substituição</b>: fila nova, URL e ARN novos, e as mensagens que estavam na fila antiga se perdem. Os dependentes (FilaPolicy, Assinatura, FuncaoSqs) são atualizados para a nova.', ['Fila (padrão)', 'Fila (FIFO)']],
+  ['Renomear o nome lógico Fila → FilaPrincipal', 'bad', 'Fila', 'Para o CloudFormation, renomear o nome lógico é <b>remover</b> um recurso e <b>adicionar</b> outro. Ele cria <code>FilaPrincipal</code> e apaga <code>Fila</code>. O efeito é igual a uma substituição.', ['Fila', 'FilaPrincipal']],
+];
+$('#upd-list').innerHTML = UPD.map((u, i) => `<button class="upd" data-i="${i}">${u[0]}</button>`).join('');
+$$('#upd-list .upd').forEach(b => b.onclick = () => {
+  $$('#upd-list .upd').forEach(x => x.classList.toggle('on', x === b));
+  const [t, lvl, res, txt, rep] = UPD[+b.dataset.i];
+  ['ok', 'warn', 'bad'].forEach(l => $('#m-' + l).classList.toggle('lit', l === lvl));
+  const label = { ok: '<span class="badge b-ok">No interruption</span>', warn: '<span class="badge b-warn">Some interruptions</span>', bad: '<span class="badge b-bad">Replacement</span>' }[lvl];
+  $('#upd-out').innerHTML = `<div class="row" style="margin-bottom:6px">${label}<span class="hint">recurso: <code>${res}</code></span></div><p style="margin:0">${txt}</p>`;
+  const r = $('#rep');
+  if (!rep) { r.innerHTML = `<div class="rbox new">${res} (mesmo ID físico)</div><span class="hint">atualizado no lugar</span>`; return; }
+  r.innerHTML = `<div class="rbox old" id="r-old">${rep[0]}</div><span class="hint" id="r-ar">…</span><div class="rbox" id="r-new" style="opacity:0">${rep[1]}</div>`;
+  setTimeout(() => { $('#r-new').style.opacity = 1; $('#r-new').classList.add('new'); $('#r-ar').textContent = '1º cria o novo ⟶'; }, 500);
+  setTimeout(() => { $('#r-old').classList.add('gone'); $('#r-ar').textContent = '2º apaga o antigo'; }, 1500);
+});
+$('#upd-list .upd').click();
+
+/* ── 11. drift ───────────────────────────────────────────────── */
+$('#drift-btn').onclick = () => {
+  const a = $('#drift-a'), b = $('#drift-b'), o = $('#drift-out');
+  a.textContent = 'Funcao.Timeout: 60'; b.textContent = 'Timeout: 60'; o.innerHTML = '1. Tudo igual: sem drift.';
+  setTimeout(() => { b.innerHTML = 'Timeout: <span style="color:#F27B7B">120</span>   ← mudado no console'; o.innerHTML = '2. Alguém mudou o timeout pelo console. O stack continua achando que é 60. <span class="badge b-bad">DRIFTED</span> é o que o <code>detect-stack-drift</code> mostraria.'; }, 900);
+  setTimeout(() => { b.innerHTML = 'Timeout: 90   ← valor do template novo'; a.textContent = 'Funcao.Timeout: 90'; o.innerHTML = '3. Semanas depois, você ajusta o <code>Timeout</code> no template e faz deploy. O CloudFormation aplica o valor do template e a mudança manual some. Regra prática: <b>o que nasceu pelo template, muda pelo template</b>. Se precisar mexer na mão, leve a mudança para o <code>template.yaml</code> depois.'; }, 2600);
+};
+
+/* ── 12. quiz ────────────────────────────────────────────────── */
+const QUIZ = [
+  ['Qual é a única seção obrigatória de um template?', ['Parameters', 'Resources', 'Outputs', 'Transform'], 1, 'Só <code>Resources</code> é obrigatória. As outras são opcionais.'],
+  ['O que <code>!Ref Fila</code> devolve?', ['O ARN da fila', 'O nome lógico "Fila"', 'A URL da fila', 'O nome da fila'], 2, 'Para <code>AWS::SQS::Queue</code>, Ref devolve a URL. Para o ARN, use <code>!GetAtt Fila.Arn</code>.'],
+  ['Por que a Dlq é criada antes da Fila?', ['Por ordem alfabética', 'Porque está escrita antes no arquivo', 'Porque a Fila usa !GetAtt Dlq.Arn', 'Por causa de um DependsOn'], 2, 'A referência cria a dependência implícita. A ordem no arquivo não importa, e não há <code>DependsOn</code> no template.'],
+  ['Quantos recursos reais o <code>AWS::Serverless::Function</code> gerou no seu stack?', ['1', '2', '3', '4'], 2, 'Funcao (Lambda::Function), FuncaoRole (IAM::Role) e FuncaoSqs (EventSourceMapping).'],
+  ['Você muda só o prompt.txt e faz deploy. O que o change set mostra?', ['Modify Funcao, Replacement False', 'Add de uma Funcao nova', 'Modify em todos os recursos', 'Nada, prompt não é infraestrutura'], 0, 'O código mudou (nova S3Key), então só a Funcao é modificada, no lugar.'],
+  ['Você adiciona <code>TableName: conversas</code> à Tabela. O que acontece com os alunos cadastrados?', ['Nada, a tabela é renomeada', 'Somem: nasce uma tabela nova e a antiga é apagada', 'O deploy é recusado', 'São copiados para a tabela nova'], 1, '<code>TableName</code> exige substituição. Sem <code>UpdateReplacePolicy: Retain</code>, a antiga é apagada no fim do update.'],
+  ['A criação de um stack novo falhou e ele está em <code>ROLLBACK_COMPLETE</code>. E agora?', ['Rodar o deploy de novo resolve', 'Os recursos criados continuam lá', 'Apagar o stack e criar de novo', 'Esperar o CloudFormation tentar sozinho'], 2, 'Depois de uma criação que falhou, tudo foi desfeito e esse stack não aceita atualização. Apague e crie outro.'],
+  ['Onde fica o "estado" (o equivalente ao tfstate)?', ['Num arquivo .cfnstate no projeto', 'No bucket do SAM', 'No próprio stack, guardado pela AWS', 'No DynamoDB do projeto'], 2, 'O stack é o estado. Não existe arquivo para guardar ou travar.'],
+];
+let score = 0, answered = 0;
+$('#quiz').innerHTML = QUIZ.map((q, i) => `<div class="q" data-q="${i}"><p>${i + 1}. ${q[0]}</p><div class="opts">${q[1].map((o, j) => `<button class="opt" data-j="${j}">${o}</button>`).join('')}</div><div class="fb"></div></div>`).join('');
+$$('#quiz .q').forEach(qd => {
+  const q = QUIZ[+qd.dataset.q];
+  $$('.opt', qd).forEach(b => b.onclick = () => {
+    if (qd.dataset.done) return; qd.dataset.done = 1; answered++;
+    const ok = +b.dataset.j === q[2]; if (ok) score++;
+    b.classList.add(ok ? 'right' : 'wrong'); $$('.opt', qd)[q[2]].classList.add('right');
+    const fb = $('.fb', qd); fb.innerHTML = (ok ? '✅ ' : '❌ ') + q[3]; fb.classList.add('show');
+    $('#score').textContent = `Acertos: ${score}/${answered}` + (answered === QUIZ.length ? (score >= 7 ? ' · mandou bem!' : ' · revise as seções 6, 7 e 10') : '');
+  });
+});
+
+/* ── 13. glossário ───────────────────────────────────────────── */
+const GLOSS = [
+  ['Template', 'Arquivo YAML/JSON que descreve a infraestrutura desejada.'],
+  ['Stack', 'Os recursos criados a partir de um template, gerenciados juntos. Também é o estado.'],
+  ['Nome lógico', 'O nome do recurso dentro do template (ex.: Fila).'],
+  ['ID físico', 'O identificador real na AWS (ex.: a URL da fila).'],
+  ['Função intrínseca', '!Ref, !GetAtt, !Sub e outras: valores resolvidos no deploy.'],
+  ['Pseudo parâmetro', 'Valores prontos como AWS::AccountId e AWS::Region.'],
+  ['Change set', 'Prévia das mudanças antes de aplicar (como terraform plan).'],
+  ['Transform / macro', 'Reescreve o template antes do deploy. O SAM é uma.'],
+  ['Rollback', 'Desfazer automático quando uma operação falha.'],
+  ['Replacement', 'Atualização que cria um recurso novo e apaga o antigo.'],
+  ['DeletionPolicy', 'O que fazer com o recurso quando ele sai do stack.'],
+  ['Drift', 'Diferença entre o template e o recurso real, por mudança manual.'],
+];
+$('#gloss').innerHTML = GLOSS.map(g => `<tr><td style="width:180px"><b>${g[0]}</b></td><td>${g[1]}</td></tr>`).join('');
+</script>
+</body>
+</html>
