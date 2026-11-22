@@ -22,6 +22,20 @@ Parameters:
   MaxPerguntas:
     Type: Number
     Default: 4
+  AlertaEmail:
+    Type: String
+    Default: none
+    Description: E-mail para alarmes e orçamento ("none" desliga e-mail e orçamento)
+  LimiteAtaquePorMinuto:
+    Type: Number
+    Default: 100
+    Description: Mensagens/minuto na fila que disparam o disjuntor (para o consumo)
+  OrcamentoMensalUsd:
+    Type: Number
+    Default: 20
+
+Conditions:
+  TemEmail: !Not [!Equals [!Ref AlertaEmail, none]]
 
 Resources:
   # Tabela única: CONVERSA#, MSG#, ALUNO#
@@ -114,6 +128,10 @@ Resources:
           LOCK_SEG: "60"
           LINK_POST: !Ref LinkPost
           MAX_PERGUNTAS: !Ref MaxPerguntas
+          RATE_MAX_POR_MINUTO: "5"
+          ABUSO_MAX_ESTOUROS: "3"
+          ABUSO_JANELA_SEG: "3600"
+          AVISO_BLOQUEIO_SEG: "86400"
       Policies:
         - DynamoDBCrudPolicy: { TableName: !Ref Tabela }
         - Statement:
@@ -144,6 +162,117 @@ Resources:
             Queue: !GetAtt Fila.Arn
             BatchSize: 5
             FunctionResponseTypes: [ReportBatchItemFailures]
+
+  # ── Proteção contra ataque / custo ──────────────────────────────────────
+  # Só o disjuntor assina este tópico: ele desliga o consumo da fila.
+  TopicoDisjuntor:
+    Type: AWS::SNS::Topic
+
+  # Alertas para humanos (e-mail), de todos os alarmes.
+  TopicoAlertas:
+    Type: AWS::SNS::Topic
+
+  AlertaEmailAssinatura:
+    Type: AWS::SNS::Subscription
+    Condition: TemEmail
+    Properties:
+      TopicArn: !Ref TopicoAlertas
+      Protocol: email
+      Endpoint: !Ref AlertaEmail
+
+  Disjuntor:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/disjuntor.handler
+      Runtime: nodejs22.x
+      Architectures: [arm64]
+      Timeout: 30
+      MemorySize: 256
+      Environment:
+        Variables:
+          FUNCAO_ALVO: !Ref Funcao
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: [lambda:ListEventSourceMappings]
+              Resource: "*"
+            - Effect: Allow
+              Action: [lambda:UpdateEventSourceMapping]
+              Resource: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:event-source-mapping:*
+      Events:
+        Alarme:
+          Type: SNS
+          Properties:
+            Topic: !Ref TopicoDisjuntor
+
+  # Muitas mensagens chegando na fila por minuto: provável ataque.
+  AlarmeAtaque:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${AWS::StackName}-ataque
+      AlarmDescription: Mensagens por minuto na fila acima do limite. O disjuntor para o consumo.
+      Namespace: AWS/SQS
+      MetricName: NumberOfMessagesSent
+      Dimensions:
+        - { Name: QueueName, Value: !GetAtt Fila.QueueName }
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: !Ref LimiteAtaquePorMinuto
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref TopicoDisjuntor, !Ref TopicoAlertas]
+
+  AlarmeDlq:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${AWS::StackName}-dlq
+      AlarmDescription: Mensagens na DLQ (falharam 5 vezes).
+      Namespace: AWS/SQS
+      MetricName: ApproximateNumberOfMessagesVisible
+      Dimensions:
+        - { Name: QueueName, Value: !GetAtt Dlq.QueueName }
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 0
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref TopicoAlertas]
+
+  AlarmeThrottle:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${AWS::StackName}-throttle
+      AlarmDescription: Lambda do atendente sofrendo throttling (concorrência no teto).
+      Namespace: AWS/Lambda
+      MetricName: Throttles
+      Dimensions:
+        - { Name: FunctionName, Value: !Ref Funcao }
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 0
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref TopicoAlertas]
+
+  # Orçamento da conta inteira (não só deste stack). Só com e-mail.
+  Orcamento:
+    Type: AWS::Budgets::Budget
+    Condition: TemEmail
+    Properties:
+      Budget:
+        BudgetName: !Sub ${AWS::StackName}-mensal
+        BudgetType: COST
+        TimeUnit: MONTHLY
+        BudgetLimit: { Amount: !Ref OrcamentoMensalUsd, Unit: USD }
+      NotificationsWithSubscribers:
+        - Notification: { NotificationType: ACTUAL, ComparisonOperator: GREATER_THAN, Threshold: 80, ThresholdType: PERCENTAGE }
+          Subscribers: [{ SubscriptionType: EMAIL, Address: !Ref AlertaEmail }]
+        - Notification: { NotificationType: FORECASTED, ComparisonOperator: GREATER_THAN, Threshold: 100, ThresholdType: PERCENTAGE }
+          Subscribers: [{ SubscriptionType: EMAIL, Address: !Ref AlertaEmail }]
 
 Outputs:
   TopicoArn:

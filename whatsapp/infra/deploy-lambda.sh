@@ -27,7 +27,8 @@ sam deploy \
   --capabilities CAPABILITY_IAM --resolve-s3 --no-confirm-changeset --no-fail-on-empty-changeset \
   --parameter-overrides \
     "KbId=$KB_ID" "GuardrailId=$GUARDRAIL_ID" "GuardrailVersion=$GUARDRAIL_VERSION" "ModelId=$MODEL_ID" \
-    "LinkPost=$LINK_POST_VALOR" "MaxPerguntas=${MAX_PERGUNTAS:-4}"
+    "LinkPost=$LINK_POST_VALOR" "MaxPerguntas=${MAX_PERGUNTAS:-4}" \
+    "AlertaEmail=${ALERTA_EMAIL:-willamyse@gmail.com}" "LimiteAtaquePorMinuto=${LIMITE_ATAQUE:-100}" "OrcamentoMensalUsd=${ORCAMENTO_USD:-20}"
 
 log "Versão no ar"
 aws lambda get-function-configuration --function-name "$FUNCAO" \

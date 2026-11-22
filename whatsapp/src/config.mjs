@@ -20,6 +20,15 @@ export const config = {
   // (limite.mjs) em vez de ir para o Bedrock.
   maxPerguntas: num(process.env.MAX_PERGUNTAS, 4),
   linkPost: process.env.LINK_POST ?? "{LINK_POST}",
+  // Bloqueado por limite recebe a mensagem fixa no máximo 1x neste intervalo.
+  avisoBloqueioSeg: num(process.env.AVISO_BLOQUEIO_SEG, 24 * 3600),
+
+  // Rate limit: acima de N mensagens por minuto do mesmo telefone, descarta em
+  // silêncio. Estourou em ABUSO_MAX_ESTOUROS minutos dentro de ABUSO_JANELA_SEG:
+  // bloqueio permanente por abuso (nunca mais responde).
+  rateMaxPorMinuto: num(process.env.RATE_MAX_POR_MINUTO, 5),
+  abusoMaxEstouros: num(process.env.ABUSO_MAX_ESTOUROS, 3),
+  abusoJanelaSeg: num(process.env.ABUSO_JANELA_SEG, 3600),
 
   // Knowledge Base (RAG com S3 Vectors)
   kbId: process.env.KB_ID,

@@ -3,7 +3,11 @@
 //   pk = CONVERSA#<telefone>   { messages, lockUntil, ttl }
 //   pk = MSG#<wamid>           { ttl }            -> idempotência
 //   pk = ALUNO#<email>         { nome, ingresso, status, pedido, ... }
-//   pk = BLOQUEADO#<telefone>  { bloqueadoEm }    -> passou do limite, SEM ttl (permanente)
+//   pk = BLOQUEADO#<telefone>  { motivo, bloqueadoEm, ultimoAvisoEm } -> SEM ttl (permanente)
+//                              motivo "limite": passou do limite de perguntas (aviso 1x/dia)
+//                              motivo "abuso":  estourou o rate limit várias vezes (silêncio)
+//   pk = RATE#<telefone>#<min> { n, ttl }         -> mensagens naquele minuto
+//   pk = ABUSO#<telefone>      { n, ttl }         -> minutos em que estourou o rate limit
 //
 // O `ttl` é o atributo de Time To Live da tabela: o DynamoDB apaga sozinho.
 
@@ -37,10 +41,10 @@ export async function marcarProcessada(messageId) {
   );
 }
 
-// ── bloqueio permanente (limite de perguntas) ─────────────────────────────
+// ── bloqueio permanente ───────────────────────────────────────────────────
 // Item próprio e sem ttl: sobrevive à expiração do histórico (24h). Como é um
 // GetItem por chave, quem já foi bloqueado não precisa de lock nem de histórico.
-export async function jaFoiBloqueado(telefone) {
+export async function buscarBloqueio(telefone) {
   const r = await dynamo.send(
     new GetCommand({
       TableName: config.tabela,
@@ -48,16 +52,100 @@ export async function jaFoiBloqueado(telefone) {
       ConsistentRead: true,
     })
   );
-  return Boolean(r.Item);
+  return r.Item ?? null;
 }
 
-export async function bloquear(telefone) {
-  await dynamo.send(
-    new PutCommand({
+// motivo: "limite" ou "abuso". "abuso" sobrescreve "limite"; o contrário não.
+export async function bloquear(telefone, motivo) {
+  await dynamo
+    .send(
+      new PutCommand({
+        TableName: config.tabela,
+        Item: { pk: `BLOQUEADO#${telefone}`, motivo, bloqueadoEm: new Date().toISOString() },
+        ...(motivo === "abuso"
+          ? {}
+          : {
+              ConditionExpression: "attribute_not_exists(pk) OR attribute_not_exists(motivo) OR motivo <> :abuso",
+              ExpressionAttributeValues: { ":abuso": "abuso" },
+            }),
+      })
+    )
+    .catch((e) => {
+      if (e.name !== "ConditionalCheckFailedException") throw e;
+    });
+}
+
+// Reserva o aviso do dia: true só se o último aviso foi há mais de
+// config.avisoBloqueioSeg (ou nunca). Escrita condicional, então duas Lambdas
+// em paralelo não mandam o aviso duas vezes. Bloqueio por abuso nunca recebe aviso.
+export async function reservarAvisoDiario(telefone) {
+  const t = agora();
+  try {
+    await dynamo.send(
+      new UpdateCommand({
+        TableName: config.tabela,
+        Key: { pk: `BLOQUEADO#${telefone}` },
+        UpdateExpression: "SET ultimoAvisoEm = :agora",
+        ConditionExpression:
+          // Item sem motivo (bloqueio antigo) conta como "limite".
+          "attribute_exists(pk) AND (attribute_not_exists(motivo) OR motivo <> :abuso) AND " +
+          "(attribute_not_exists(ultimoAvisoEm) OR ultimoAvisoEm < :limite)",
+        ExpressionAttributeValues: { ":agora": t, ":limite": t - config.avisoBloqueioSeg, ":abuso": "abuso" },
+      })
+    );
+    return true;
+  } catch (e) {
+    if (e.name === "ConditionalCheckFailedException") return false;
+    throw e;
+  }
+}
+
+// Desfaz a reserva quando o envio falhou, para o retry poder avisar.
+export async function cancelarAviso(telefone) {
+  await dynamo
+    .send(
+      new UpdateCommand({
+        TableName: config.tabela,
+        Key: { pk: `BLOQUEADO#${telefone}` },
+        UpdateExpression: "REMOVE ultimoAvisoEm",
+      })
+    )
+    .catch(() => {});
+}
+
+// ── rate limit por telefone ───────────────────────────────────────────────
+// Contador atômico por minuto. Devolve quantas mensagens o telefone mandou no
+// minuto atual, contando esta.
+export async function contarMensagemNoMinuto(telefone) {
+  const t = agora();
+  const minuto = Math.floor(t / 60);
+  const r = await dynamo.send(
+    new UpdateCommand({
       TableName: config.tabela,
-      Item: { pk: `BLOQUEADO#${telefone}`, bloqueadoEm: new Date().toISOString() },
+      Key: { pk: `RATE#${telefone}#${minuto}` },
+      UpdateExpression: "ADD n :um SET #ttl = :ttl",
+      ExpressionAttributeNames: { "#ttl": "ttl" },
+      ExpressionAttributeValues: { ":um": 1, ":ttl": (minuto + 2) * 60 },
+      ReturnValues: "UPDATED_NEW",
     })
   );
+  return r.Attributes.n;
+}
+
+// Conta um minuto em que o telefone estourou o rate limit. A janela começa no
+// primeiro estouro e dura config.abusoJanelaSeg. Devolve o total na janela.
+export async function registrarEstouro(telefone) {
+  const r = await dynamo.send(
+    new UpdateCommand({
+      TableName: config.tabela,
+      Key: { pk: `ABUSO#${telefone}` },
+      UpdateExpression: "ADD n :um SET #ttl = if_not_exists(#ttl, :ttl)",
+      ExpressionAttributeNames: { "#ttl": "ttl" },
+      ExpressionAttributeValues: { ":um": 1, ":ttl": agora() + config.abusoJanelaSeg },
+      ReturnValues: "UPDATED_NEW",
+    })
+  );
+  return r.Attributes.n;
 }
 
 // ── lock por telefone ─────────────────────────────────────────────────────

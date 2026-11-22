@@ -5,12 +5,13 @@
   "type": "module",
   "main": "src/handler.mjs",
   "scripts": {
-    "test": "node test/parseEvent.test.mjs && node test/telefone.test.mjs && node test/limite.test.mjs"
+    "test": "node test/parseEvent.test.mjs && node test/telefone.test.mjs && node test/limite.test.mjs && node test/disjuntor.test.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-bedrock-agent-runtime": "^3.1108.0",
     "@aws-sdk/client-bedrock-runtime": "^3.1015.0",
     "@aws-sdk/client-dynamodb": "^3.1015.0",
+    "@aws-sdk/client-lambda": "^3.1175.0",
     "@aws-sdk/client-socialmessaging": "^3.1015.0",
     "@aws-sdk/lib-dynamodb": "^3.1015.0"
   }
