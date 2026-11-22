@@ -15,8 +15,8 @@ assert.equal(contarPerguntas(hist(3)), 3);
 // toolResult é role "user", mas não é pergunta do usuário
 assert.equal(contarPerguntas([user("a"), toolUse, toolResult, ia("b")]), 1);
 
-assert.equal(passouDoLimite(hist(7), 8), false);
-assert.equal(passouDoLimite(hist(8), 8), true); // a 9ª pergunta já é bloqueada
+assert.equal(passouDoLimite(hist(3), 4), false);
+assert.equal(passouDoLimite(hist(4), 4), true); // a 5ª pergunta já recebe a mensagem fixa
 
 assert.equal(mensagemLimite("oi", "https://lnkd.in/x"), MSG_DEFAULT_MAX_MSGS.replace("{LINK_POST}", "https://lnkd.in/x"));
 assert.ok(!mensagemLimite("oi", "https://lnkd.in/x").includes("{LINK_POST}"));

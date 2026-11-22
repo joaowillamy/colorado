@@ -18,7 +18,9 @@ export async function buscar(pergunta) {
   );
 
   const todos = (r.retrievalResults ?? []).map((x) => ({
-    fonte: x.location?.s3Location?.uri?.split("/").slice(-2).join("/") ?? "?",
+    // Só o caminho dentro do bucket. O nome do bucket tem o ID da conta (12 dígitos),
+    // que o guardrail detecta como CREDIT_DEBIT_CARD_NUMBER e bloqueia a mensagem.
+    fonte: x.location?.s3Location?.uri?.replace(/^s3:\/\/[^/]+\//, "") ?? "?",
     score: x.score ?? 0,
     texto: x.content?.text ?? "",
   }));

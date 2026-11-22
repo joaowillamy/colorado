@@ -21,7 +21,7 @@ export KB_ROLE_NAME="${PROJ}-kb-role"
 
 # Knowledge Base com S3 Vectors (o KB gerenciado não existe em us-east-2)
 export VECTOR_BUCKET="${VECTOR_BUCKET:-${PROJ}-vectors-${ACCOUNT_ID}-${AWS_REGION}}"
-export VECTOR_INDEX="${VECTOR_INDEX:-docs-rag-v3}"
+export VECTOR_INDEX="${VECTOR_INDEX:-docs-rag-v2}"
 export EMBED_MODEL_ID="${EMBED_MODEL_ID:-amazon.titan-embed-text-v2:0}"
 export EMBED_DIM="${EMBED_DIM:-1024}"
 

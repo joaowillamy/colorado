@@ -21,7 +21,7 @@ Parameters:
     Description: Link do post do LinkedIn enviado na mensagem de limite
   MaxPerguntas:
     Type: Number
-    Default: 8
+    Default: 4
 
 Resources:
   # Tabela única: CONVERSA#, MSG#, ALUNO#
